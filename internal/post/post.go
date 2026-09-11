@@ -131,3 +131,72 @@ func List(contentDir string) ([]Post, error) {
 	})
 	return posts, nil
 }
+
+// PathForSlug returns the conventional file path for a slug under contentDir.
+func PathForSlug(contentDir, slug string) string {
+	return filepath.Join(contentDir, "posts", slug+".md")
+}
+
+// UpdateFrontmatter rewrites only the frontmatter, preserving unknown keys and the body.
+func UpdateFrontmatter(path string, mutate func(*Frontmatter) error) error {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	norm := strings.ReplaceAll(string(raw), "\r\n", "\n")
+	if !strings.HasPrefix(norm, "---\n") {
+		return fmt.Errorf("%s: missing frontmatter", path)
+	}
+	rest := norm[4:]
+	end := strings.Index(rest, "\n---\n")
+	var fmText, body string
+	if end < 0 {
+		if strings.HasSuffix(rest, "\n---") {
+			fmText = rest[:len(rest)-4]
+			body = ""
+		} else {
+			return fmt.Errorf("%s: missing frontmatter", path)
+		}
+	} else {
+		fmText = rest[:end]
+		body = rest[end+len("\n---\n"):]
+	}
+	var current map[string]any
+	if err := yaml.Unmarshal([]byte(fmText), &current); err != nil {
+		return fmt.Errorf("%s: bad frontmatter: %w", path, err)
+	}
+	var known Frontmatter
+	if err := yaml.Unmarshal([]byte(fmText), &known); err != nil {
+		return fmt.Errorf("%s: bad frontmatter: %w", path, err)
+	}
+	if err := mutate(&known); err != nil {
+		return err
+	}
+	merged, err := yaml.Marshal(&known)
+	if err != nil {
+		return err
+	}
+	var mergedMap map[string]any
+	if err := yaml.Unmarshal(merged, &mergedMap); err != nil {
+		return err
+	}
+	for k, v := range current {
+		switch k {
+		case "title", "date", "description", "tags", "slug", "draft":
+			continue
+		}
+		if _, ok := mergedMap[k]; !ok {
+			mergedMap[k] = v
+		}
+	}
+	out, err := yaml.Marshal(mergedMap)
+	if err != nil {
+		return err
+	}
+	var final strings.Builder
+	final.WriteString("---\n")
+	final.Write(out)
+	final.WriteString("---\n")
+	final.WriteString(body)
+	return os.WriteFile(path, []byte(final.String()), 0o644)
+}

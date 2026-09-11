@@ -1,0 +1,204 @@
+// Package cli holds the headless command implementations shared by cobra and the TUI.
+package cli
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"tofu/internal/config"
+	"tofu/internal/post"
+)
+
+// IsTTY reports whether stdout is a terminal. Stdlib only.
+func IsTTY() bool {
+	st, _ := os.Stdout.Stat()
+	return st != nil && st.Mode()&os.ModeCharDevice != 0
+}
+
+// DefaultConfig returns the tofu.toml written by init.
+func DefaultConfig() config.Site {
+	return config.Site{
+		Title:       "My Tofu Site",
+		Author:      "Jane Doe",
+		Description: "A cute little blog",
+		BaseURL:     "https://example.com",
+		Language:    "en",
+		RecentCount: 5,
+		Footer:      "Made with tofu \U0001F9CA",
+		Theme: config.Theme{
+			Width:          "720px",
+			FontMain:       "Verdana, sans-serif",
+			FontSecondary:  "Verdana, sans-serif",
+			FontScale:      "1em",
+			Background:     "#fff",
+			Heading:        "#222",
+			Text:           "#444",
+			Link:           "#3273dc",
+			Visited:        "#8b6fcb",
+			Blockquote:     "#222",
+			DarkBackground: "#01242e",
+			DarkHeading:    "#eee",
+			DarkText:       "#ddd",
+			DarkLink:       "#8cc2dd",
+			DarkVisited:    "#8b6fcb",
+			DarkBlockquote: "#ccc",
+		},
+		Header: config.Header{
+			Title: "My Tofu Site",
+			Nav: []config.NavItem{
+				{Label: "Home", URL: "/"},
+				{Label: "Blog", URL: "/articles/"},
+			},
+		},
+		Homepage: config.Homepage{
+			Heading:  "Hello!",
+			BodyFile: "content/home.md",
+		},
+	}
+}
+
+const sampleHome = "# Hello!\n\nThis is your tofu site. Edit `content/home.md` to make it yours.\n"
+
+const samplePost = "# %s\n\nWrite your post here.\n"
+
+const sampleCustomCSS = "/* your custom styles, loaded after style.css */\n"
+
+// InitScaffold creates a new site in dir. Refuses non-empty dirs unless force.
+func InitScaffold(dir string, force bool) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err == nil && len(entries) > 0 && !force {
+		return nil, fmt.Errorf("%s is not empty (use --force to write anyway)", dir)
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	var created []string
+	mk := func(rel, content string) error {
+		p := filepath.Join(dir, rel)
+		if _, statErr := os.Stat(p); statErr == nil {
+			return nil
+		}
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			return err
+		}
+		created = append(created, rel)
+		return nil
+	}
+	cfg := DefaultConfig()
+	tomlPath := filepath.Join(dir, "tofu.toml")
+	if _, statErr := os.Stat(tomlPath); statErr != nil {
+		if err := config.Save(tomlPath, cfg); err != nil {
+			return nil, err
+		}
+		created = append(created, "tofu.toml")
+	}
+	if err := mk("content/home.md", sampleHome); err != nil {
+		return nil, err
+	}
+	if err := mk("assets-blog/custom.css", sampleCustomCSS); err != nil {
+		return nil, err
+	}
+	today := time.Now().Format("2006-01-02")
+	fm := fmt.Sprintf("---\ntitle: Hello, tofu\ndate: %s\ndescription: Your first tofu post\ntags:\n  - intro\n---\n\n%s", today, fmt.Sprintf(samplePost, "Hello, tofu"))
+	if err := mk(filepath.Join("content", "posts", "hello-tofu.md"), fm+"\n"); err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+// NewPostInput is everything needed to create a post file.
+type NewPostInput struct {
+	Title       string
+	Slug        string
+	Date        string
+	Tags        []string
+	Description string
+	Draft       bool
+	Body        string
+	AssetPath   string
+}
+
+// SlugFor derives the slug for a new post: explicit slug, else slugified title,
+// else post-<date>.
+func SlugFor(in NewPostInput) string {
+	if in.Slug != "" {
+		return in.Slug
+	}
+	if s := post.Slugify(in.Title); s != "" {
+		return s
+	}
+	date := in.Date
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
+	}
+	return "post-" + date
+}
+
+// CreatePost writes content/posts/<slug>.md. Existing files error (use edit).
+func CreatePost(root string, in NewPostInput) (string, error) {
+	slug := SlugFor(in)
+	rel := filepath.Join("content", "posts", slug+".md")
+	path := filepath.Join(root, rel)
+	if _, err := os.Stat(path); err == nil {
+		return "", fmt.Errorf("%s already exists; use `tofu edit` to change it", rel)
+	}
+	date := in.Date
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
+	}
+	if _, err := time.Parse("2006-01-02", date); err != nil {
+		if _, err2 := time.Parse(time.RFC3339, date); err2 != nil {
+			return "", fmt.Errorf("bad date %q (want YYYY-MM-DD)", date)
+		}
+	}
+	var b strings.Builder
+	b.WriteString("---\n")
+	fmt.Fprintf(&b, "title: %q\n", in.Title)
+	fmt.Fprintf(&b, "date: %s\n", date)
+	if in.Description != "" {
+		fmt.Fprintf(&b, "description: %q\n", in.Description)
+	}
+	if len(in.Tags) > 0 {
+		b.WriteString("tags:\n")
+		for _, t := range in.Tags {
+			fmt.Fprintf(&b, "  - %s\n", t)
+		}
+	}
+	if in.Draft {
+		b.WriteString("draft: true\n")
+	}
+	b.WriteString("---\n\n")
+	body := in.Body
+	if strings.TrimSpace(body) == "" {
+		body = fmt.Sprintf(samplePost, in.Title)
+	}
+	b.WriteString(body)
+	if !strings.HasSuffix(body, "\n") {
+		b.WriteString("\n")
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(path, []byte(b.String()), 0o644); err != nil {
+		return "", err
+	}
+	return rel, nil
+}
+
+// ParseTags splits a comma-separated tag list.
+func ParseTags(s string) []string {
+	var out []string
+	for _, part := range strings.Split(s, ",") {
+		t := strings.TrimSpace(part)
+		if t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
+}
