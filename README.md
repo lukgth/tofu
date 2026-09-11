@@ -8,12 +8,22 @@ $ tofu
 
   tofu
 
-  • New site            • Build site
-  • New blog post       • Preview (serve)
-  • Edit existing posts • List posts
-                        • Quit
+│ New site
 
-  enter select • / filter • ctrl+c quit
+  New blog post
+
+  Edit existing posts
+
+  Build site
+
+  Preview (serve)
+
+  List posts
+
+  Quit
+
+
+enter select • / filter • ctrl+c quit
 ```
 
 ## Tutorial
@@ -69,9 +79,11 @@ $ tofu edit hello-world --title "Hello there"
 updated content/posts/hello-world.md
 ```
 
-`new` flags are optional, the wizard asks for whatever's missing. `edit`
-flags (`--title/--tags/--description/--date/--draft-set`) work headless.
-With a TTY you get a date|slug|title table and a full editor flow.
+`new` flags are optional, the wizard asks for whatever's missing. The body
+step grows with your text and accepts `ctrl+o` to jump into `$EDITOR`.
+`edit` flags (`--title/--tags/--description/--date/--draft-set`) work
+headless; with a TTY you get a date|slug|title picker (or `ctrl+b` to
+browse files) and a full edit form.
 
 ### tofu build / tofu list
 
@@ -106,26 +118,33 @@ footer = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
 
 [theme]
 width = "720px"
-link = "#3273dc"
+link = "#9d6bb8"
+code_style = "github"
+dark_code_style = "github-dark"
 ```
 
-The full sample (every theme color, nav, homepage heading) is in
+The full sample (every theme color, nav, homepage, code color schemes) is in
 [example/tofu.toml](example/tofu.toml). Unknown keys are errors.
 
-## Output
+## Docs
 
-```text
-public/
-├── index.html
-├── articles/        (index.html + one html per post)
-├── assets-blog/     (style.css + your custom.css)
-└── feed.xml
-```
+- [Configuration](docs/configuration.md) — every `tofu.toml` key, theme colors, code color schemes
+- [Content](docs/content.md) — post format, frontmatter, tags, homepage, editing
+- [Markdown](docs/markdown.md) — syntax map, `==highlight==`, raw HTML, code blocks, images
+- [Theming](docs/theming.md) — layers, fonts, header anatomy, custom.css recipes
+- [TUI Reference](docs/tui.md) — menu, wizards, keybindings, mouse, file browser
+- [Deploying](docs/deploying.md) — output tree, static hosts, rsync/CI
 
-## Customize
+## Features
 
-Every color is a `[theme]` variable, including the full dark-mode set.
-`assets-blog/custom.css` loads after `style.css`, so it wins.
+- Interactive TUI (menu, wizards, mouse support) — all styling through Bubble Tea + Lip Gloss
+- Wizards for site creation, new posts, and editing; `ctrl+o` opens `$EDITOR` on the body step
+- Self-hosted fonts (Rubik + Ioskeley Mono) — zero external requests
+- Light/dark theme with a visitor toggle, `localStorage` persistence, no flash on load
+- Per-tag list pages, RSS feed, drafts
+- `==highlight==` markdown, raw HTML passthrough, footnotes
+- Syntax-highlighted code blocks with 60+ selectable color schemes
+- Everything configurable from `tofu.toml`; `assets-blog/custom.css` loads after the theme
 
 ## Deploy
 
