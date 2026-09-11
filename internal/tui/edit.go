@@ -377,10 +377,14 @@ type editFormModel struct {
 	editorFn func() error
 }
 
-func runEditForm(root, path string, o Options, isDark bool) error {
+// newEditWizard builds the edit-form wizard model. Split out of runEditForm
+// so tests can drive the real steps/finish/execFinish closures through
+// wizardModel.Update without launching a terminal program. Returns a nil
+// model when the file does not parse.
+func newEditWizard(root, path string, o Options, isDark bool) (*wizardModel, error) {
 	p, err := post.ParseFile(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	titleIn := newTextInput("title", p.Frontmatter.Title, o)
@@ -420,10 +424,14 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 			return nil
 		}, branch: func(w *wizardModel) tea.Cmd {
 			// The external editor replaces the textarea step entirely:
-			// jump straight to review.
+			// jump straight to review. Quick edit advances to the
+			// textarea; a non-nil branch owns its own advancement, so it
+			// must handle both legs.
 			if editorWanted {
-				w.gotoReview()
+				return w.gotoReview()
 			}
+			w.stepIdx++
+			w.focusStep()
 			return nil
 		}},
 		{kind: stepBody, label: "body (textarea)", area: &body, setter: func(v string) error {
@@ -449,14 +457,23 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 			}); err != nil {
 				return err
 			}
-			return post.SetBody(path, newBody)
+			// Only the textarea path owns the body; the editor path must
+			// never rewrite it with an empty newBody.
+			if !editorWanted {
+				return post.SetBody(path, newBody)
+			}
+			return nil
 		},
 		execFinish: func(w *wizardModel) tea.Cmd {
-			cmd, err := resolveEditorCmd(path)
+			if !editorWanted {
+				err := w.finish(w)
+				return func() tea.Msg { return wizardQuitMsg{err: err} }
+			}
+			sel, err := resolveEditor(path)
 			if err != nil {
 				return func() tea.Msg { return wizardQuitMsg{err: err} }
 			}
-			return tea.ExecProcess(cmd, func(runErr error) tea.Msg {
+			followUp := func(runErr error) tea.Msg {
 				if runErr != nil {
 					return wizardQuitMsg{err: fmt.Errorf("editor failed: %w", runErr)}
 				}
@@ -465,20 +482,75 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 					return nil
 				})
 				return wizardQuitMsg{err: err}
-			})
+			}
+			if sel.needSelection {
+				return runSelectEditorCmd(path, func(s2 editorSelection) tea.Msg {
+					if s2.err != nil {
+						return wizardQuitMsg{err: s2.err}
+					}
+					if s2.cmd == nil {
+						return wizardQuitMsg{err: fmt.Errorf("no editor selected")}
+					}
+					return execEditorMergeMsg{cmd: s2.cmd, followUp: followUp}
+				}, false)
+			}
+			return tea.ExecProcess(sel.cmd, followUp)
 		},
+
 		summary: func(w *wizardModel) string {
-			return strings.Join([]string{
+			lines := []string{
 				Title.Render("review"),
 				"title: " + fm.Title,
 				"date: " + fm.Date,
 				"tags: " + strings.Join(fm.Tags, ", "),
 				"description: " + fm.Description,
-			}, "\n")
+			}
+			if editorWanted {
+				sel, _ := resolveEditor(path)
+				switch {
+				case sel.err != nil:
+					lines = append(lines, "editor: "+sel.err.Error())
+				case sel.needSelection:
+					lines = append(lines, "editor: select-editor will ask (opens after confirm)")
+				default:
+					name := editorDisplayName()
+					if sel.fromSource != "" {
+						lines = append(lines, "editor: "+name+" (from "+sel.fromSource+", opens after confirm)")
+					} else {
+						lines = append(lines, "editor: "+name+" (opens after confirm)")
+					}
+				}
+			}
+			return strings.Join(lines, "\n")
 		},
 	}
-	if !editorWanted {
-		w.execFinish = nil
+	w.repickEditor = func() tea.Cmd {
+		return runSelectEditorCmd(path, func(s2 editorSelection) tea.Msg {
+			if s2.err != nil {
+				return editorRepickErrorMsg{err: s2.err}
+			}
+			if s2.cmd == nil || len(s2.cmd.Args) == 0 {
+				return editorRepickErrorMsg{err: fmt.Errorf("no editor selected")}
+			}
+			args := s2.cmd.Args
+			if n := len(args); n > 0 && args[n-1] == path {
+				args = args[:n-1]
+			}
+			if len(args) == 0 {
+				return editorRepickErrorMsg{err: fmt.Errorf("no editor selected")}
+			}
+			setSessionEditor(strings.Join(args, " "))
+			return editorRepickedMsg{}
+		}, true)
+	}
+	return w, nil
+}
+
+func runEditForm(root, path string, o Options, isDark bool) error {
+	clearSessionEditor()
+	w, err := newEditWizard(root, path, o, isDark)
+	if err != nil {
+		return err
 	}
 	return runWizardProgram(w)
 }

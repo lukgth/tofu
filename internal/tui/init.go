@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -19,28 +20,37 @@ type spring interface {
 	Update(pos, vel, equilibriumPos float64) (newPos, newVel float64)
 }
 
+type execEditorMergeMsg struct {
+	cmd      *exec.Cmd
+	followUp func(error) tea.Msg
+}
+
+type editorRepickedMsg struct{}
+type editorRepickErrorMsg struct{ err error }
+
 // wizardModel drives the multi-step prompts of one wizard.
 // Screens: prompt -> review -> working -> done.
 type wizardModel struct {
-	root       string
-	opts       Options
-	screen     string
-	title      string
-	isDark     bool
-	slide      Slide
-	spring     spring
-	spinnerM   spinnerModel
-	prog       progressModel
-	progMsg    string
-	vp         viewportModel
-	confirm    choiceModel
-	errorMsg   string
-	doneMsg    string
-	steps      []step
-	stepIdx    int
-	finish     func(w *wizardModel) error
-	execFinish func(w *wizardModel) tea.Cmd
-	summary    func(w *wizardModel) string
+	root         string
+	opts         Options
+	screen       string
+	title        string
+	isDark       bool
+	slide        Slide
+	spring       spring
+	spinnerM     spinnerModel
+	prog         progressModel
+	progMsg      string
+	vp           viewportModel
+	confirm      choiceModel
+	errorMsg     string
+	doneMsg      string
+	steps        []step
+	stepIdx      int
+	finish       func(w *wizardModel) error
+	execFinish   func(w *wizardModel) tea.Cmd
+	repickEditor func() tea.Cmd
+	summary      func(w *wizardModel) string
 }
 
 type wizardQuitMsg struct{ err error }
@@ -67,6 +77,18 @@ func (w *wizardModel) current() *step {
 
 func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case execEditorMergeMsg:
+		return w, tea.ExecProcess(msg.cmd, msg.followUp)
+	case editorRepickedMsg:
+		w.screen = "review"
+		if w.summary != nil {
+			w.vp.setContent(w.summary(w))
+		}
+		return w, nil
+	case editorRepickErrorMsg:
+		w.screen = "review"
+		w.errorMsg = msg.err.Error()
+		return w, nil
 	case tea.WindowSizeMsg:
 		w.opts.Width = msg.Width
 		return w, nil
@@ -155,6 +177,12 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				w.stepIdx = 0
 				w.focusStep()
 				return w, nil
+			case "e", "E":
+				if w.repickEditor != nil {
+					w.screen = "working"
+					w.progMsg = "selecting editor"
+					return w, tea.Batch(w.spinnerM.tick(), w.repickEditor())
+				}
 			case "esc", "q":
 				w.screen = "prompt"
 				w.stepIdx = 0
@@ -346,6 +374,9 @@ func (w *wizardModel) viewContent() tea.View {
 		))
 	case "review":
 		footer := HelpFooter(w.opts)
+		if w.repickEditor != nil {
+			footer = HelpStyle.Render("enter confirm • e change editor • esc back")
+		}
 		if w.errorMsg != "" {
 			footer = ErrorStyle.Render(w.errorMsg) + "\n" + footer
 		}

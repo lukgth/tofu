@@ -41,12 +41,12 @@ Wizards are step-by-step prompts: each step shows a label, one control, and a fo
 | `enter` | accept and go to the next step |
 | `esc` | previous step (on the first step: quit) |
 | `ctrl+c` | quit immediately |
-| `ctrl+o` | **body step only**: open the draft in `$EDITOR` |
+| `ctrl+o` | **body step only**: open the draft in `$EDITOR`; if it is unset or unusable, use the editor chosen by `select-editor` (`~/.selected_editor`), suspending into `select-editor` once if needed |
 
 - **Input steps**: text inputs with defaults/placeholder. `enter` on an empty title shows `a title is required`.
 - **Choice steps**: every option is a visible rounded card. Selected card: accent border + `●`; others: dim border + `○`. `↑/↓` moves, `enter` picks. **Mouse**: click a card to pick it.
-- **Body step**: grows with your content (starts 14 rows, max 30), no line numbers, placeholder `empty = starter template` on new posts. `ctrl+o` opens the current draft in `$EDITOR` (multi-word editors like `code --wait` work); on editor exit the text lands back in the textarea and the step stays put. Nonzero editor exit shows an inline `editor failed: …` message and keeps the draft.
-- **Review screen**: summary + Yes/No cards. `enter` on Yes runs the action; `esc`/No returns to step 1.
+- **Body step**: grows with your content (starts 14 rows, max 30), no line numbers, placeholder `empty = starter template` on new posts. `ctrl+o` opens the current draft in `$EDITOR` (multi-word editors like `code --wait` work); if `$EDITOR` is unset or unusable, it falls back to the `select-editor` choice, asking once with `select-editor` when needed. On editor exit the text lands back in the textarea and the step stays put. Nonzero editor exit shows an inline `editor failed: …` message and keeps the draft.
+- **Review screen**: summary + Yes/No cards. `enter` on Yes runs the action; `esc`/No returns to step 1. `e` = change editor (runs `select-editor`; the pick applies to this session).
 - **Done screen**: `✓ Done! …` plus `press enter to go back to the menu`.
 
 ## Editing existing posts
@@ -79,7 +79,7 @@ Browses `content/` with tofu's own name|date|size browser (directories first, no
 
 Prefilled from frontmatter: title, date, tags (comma-separated), description, then a body-mode choice (`Quick edit (textarea)` / `Open $EDITOR`) and the body step.
 
-- `Open $EDITOR` skips the textarea and, after review, opens the whole file (frontmatter + body) in `$EDITOR`; frontmatter changes from the form are merged after the editor exits.
+- `Open $EDITOR` skips the textarea and, after review, opens the whole file (frontmatter + body) in `$EDITOR`; if `$EDITOR` is unset or unusable, it uses the `select-editor` choice (running `select-editor` once, then opening the file in the chosen editor). The review screen shows which editor will open and where it came from (`from $EDITOR` / `from select-editor`), with `e` to change editor by re-running `select-editor` (the pick overrides `$EDITOR` for this session). The review screen shows which editor will open (`editor: … (opens after confirm)`); frontmatter changes from the form are merged after the editor exits.
 - `Quick edit` writes frontmatter + body directly at the end.
 
 ## Progress / preview screens
