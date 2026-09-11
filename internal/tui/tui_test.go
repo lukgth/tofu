@@ -69,6 +69,73 @@ func TestWizardEngineWalk(t *testing.T) {
 	}
 }
 
+func TestChoiceCursorNavigation(t *testing.T) {
+	c := newChoice([]string{"Yes", "No"}, true, 80)
+	if c.selected() != "Yes" {
+		t.Fatalf("default selection = %q", c.selected())
+	}
+	c = c.update(keyPress("down"))
+	if c.selected() != "No" {
+		t.Fatalf("after down = %q", c.selected())
+	}
+	c = c.update(keyPress("down"))
+	if c.selected() != "No" {
+		t.Fatalf("down past end should clamp, got %q", c.selected())
+	}
+	c = c.update(keyPress("up"))
+	c = c.update(keyPress("up"))
+	if c.selected() != "Yes" {
+		t.Fatalf("after up up = %q", c.selected())
+	}
+	// every option is rendered - nothing hidden behind pagination
+	v := c.view(true)
+	if !strings.Contains(v, "Yes") || !strings.Contains(v, "No") {
+		t.Errorf("view must show all options, got %q", v)
+	}
+	if strings.Contains(v, "••") {
+		t.Errorf("view must not render pagination dots: %q", v)
+	}
+}
+
+func keyPress(s string) tea.KeyPressMsg {
+	switch s {
+	case "enter":
+		return tea.KeyPressMsg{Code: tea.KeyEnter}
+	case "up":
+		return tea.KeyPressMsg{Code: tea.KeyUp}
+	case "down":
+		return tea.KeyPressMsg{Code: tea.KeyDown}
+	}
+	return tea.KeyPressMsg{Code: ' ', Text: s}
+}
+
+func TestBodyStepRendersAndAdvances(t *testing.T) {
+	area := textarea.New()
+	area.SetStyles(textareaStyles())
+	area.SetValue("hello body")
+	steps := []step{
+		{kind: stepBody, label: "body", area: &area},
+	}
+	w := &wizardModel{
+		opts:  normalize(Options{}),
+		title: "t",
+		steps: steps,
+	}
+	w.screen = "prompt"
+	w.focusStep()
+
+	v := w.View()
+	// the body textarea must be visible, not rendered as empty string
+	if !strings.Contains(v.Content, "hello body") {
+		t.Errorf("body step view hides textarea content")
+	}
+	m, _ := w.Update(keyPress("enter"))
+	w = m.(*wizardModel)
+	if w.screen != "review" {
+		t.Fatalf("enter on body step should reach review, screen=%q", w.screen)
+	}
+}
+
 func TestMenuItemsOrderAndLabels(t *testing.T) {
 	want := []string{
 		"New site",

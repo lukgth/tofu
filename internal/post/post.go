@@ -200,3 +200,19 @@ func UpdateFrontmatter(path string, mutate func(*Frontmatter) error) error {
 	final.WriteString(body)
 	return os.WriteFile(path, []byte(final.String()), 0o644)
 }
+
+// SetBody replaces the markdown body after the frontmatter, leaving the
+// frontmatter untouched.
+func SetBody(path, body string) error {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	s := strings.ReplaceAll(string(raw), "\r\n", "\n")
+	end := strings.Index(s, "\n---\n")
+	if end < 0 {
+		return fmt.Errorf("%s: missing frontmatter", path)
+	}
+	bodyEnd := end + len("\n---\n")
+	return os.WriteFile(path, []byte(s[:bodyEnd]+body), 0o644)
+}

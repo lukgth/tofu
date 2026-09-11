@@ -237,10 +237,13 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 				}
 				return fmt.Errorf("EDITOR is not set; quick edit used instead (or run `tofu edit --title ...`)")
 			}
-			return post.UpdateFrontmatter(path, func(f *post.Frontmatter) error {
+			if err := post.UpdateFrontmatter(path, func(f *post.Frontmatter) error {
 				applyForm(f, &fm)
 				return nil
-			})
+			}); err != nil {
+				return err
+			}
+			return post.SetBody(path, newBody)
 		},
 		summary: func(w *wizardModel) string {
 			return strings.Join([]string{

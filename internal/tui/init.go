@@ -54,11 +54,7 @@ func runWizardProgram(w *wizardModel) error {
 }
 
 func (w *wizardModel) Init() tea.Cmd {
-	cmds := []tea.Cmd{SlideCmd(w.slide, w.opts.NoAnimations)}
-	if s := w.current(); s != nil && s.kind == stepChoice {
-		cmds = append(cmds, nil)
-	}
-	return tea.Batch(cmds...)
+	return SlideCmd(w.slide, w.opts.NoAnimations)
 }
 
 func (w *wizardModel) current() *step {
@@ -116,9 +112,8 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				w.focusStep()
 				return w, nil
 			}
-			var cmd tea.Cmd
-			w.confirm.list, cmd = w.confirm.list.Update(msg)
-			return w, cmd
+			w.confirm = w.confirm.update(msg)
+			return w, nil
 
 		case "working":
 			return w, nil
@@ -178,9 +173,8 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					w.focusStep()
 					return w, nil
 				}
-				var cmd tea.Cmd
-				s.choice.list, cmd = s.choice.list.Update(msg)
-				return w, cmd
+				*s.choice = s.choice.update(msg)
+				return w, nil
 
 			case stepBody:
 				if msg.String() == "enter" {
@@ -286,7 +280,7 @@ func (w *wizardModel) View() tea.View {
 			AnimatedTitle(w.slide.X, "tofu 🧊 "+w.title),
 			w.vp.view(),
 			"",
-			w.confirm.list.View(),
+			w.confirm.view(w.isDark),
 			footer,
 		))
 	case "done":
@@ -309,7 +303,9 @@ func (w *wizardModel) View() tea.View {
 		case stepInput:
 			body = s.input.View()
 		case stepChoice:
-			body = s.choice.list.View()
+			body = s.choice.view(w.isDark)
+		case stepBody:
+			body = s.area.View()
 		case stepFile:
 			body = s.pick.View()
 		}

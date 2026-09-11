@@ -1,10 +1,12 @@
 package tui
 
 import (
+	"strings"
+
 	"charm.land/bubbles/v2/filepicker"
-	"charm.land/bubbles/v2/list"
 	"charm.land/bubbles/v2/textarea"
 	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
 )
 
 type stepKind int
@@ -55,38 +57,61 @@ func newFilePicker(o Options) filepicker.Model {
 	return fp
 }
 
-// choiceModel is an option list (Yes/No, editor choice, ...).
+// choiceModel is a plain cursor over options — every choice always visible,
+// no list pagination hiding entries behind a •• pager.
 type choiceModel struct {
-	list    list.Model
+	cursor  int
 	options []string
 }
 
 func newChoice(options []string, isDark bool, width int) choiceModel {
-	items := make([]list.Item, len(options))
-	for i, opt := range options {
-		items[i] = menuItem{label: opt}
-	}
-	l := newList(items, isDark, width, len(options)+2)
-	l.SetShowTitle(false)
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.SetShowHelp(false)
-	return choiceModel{list: l, options: options}
+	return choiceModel{options: options}
 }
 
 func (c *choiceModel) selected() string {
-	i := c.list.Index()
-	if i < 0 || i >= len(c.options) {
+	if c.cursor < 0 || c.cursor >= len(c.options) {
 		return ""
 	}
-	return c.options[i]
+	return c.options[c.cursor]
 }
 
 func (c *choiceModel) selectOption(v string) {
 	for i, o := range c.options {
 		if o == v {
-			c.list.Select(i)
+			c.cursor = i
 			return
 		}
 	}
+}
+
+// update moves the cursor with up/down and returns the model (immutable form
+// for bubbletea Update chains).
+func (c choiceModel) update(msg tea.KeyPressMsg) choiceModel {
+	switch msg.String() {
+	case "up", "k":
+		if c.cursor > 0 {
+			c.cursor--
+		}
+	case "down", "j":
+		if c.cursor < len(c.options)-1 {
+			c.cursor++
+		}
+	}
+	return c
+}
+
+// view renders all options, cursor row highlighted with the accent.
+func (c choiceModel) view(isDark bool) string {
+	var b strings.Builder
+	for i, opt := range c.options {
+		if i == c.cursor {
+			b.WriteString(Accent.Render("> " + opt))
+		} else {
+			b.WriteString(Dim.Render("  " + opt))
+		}
+		if i < len(c.options)-1 {
+			b.WriteString("\n")
+		}
+	}
+	return b.String()
 }
