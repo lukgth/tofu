@@ -15,14 +15,14 @@ import (
 	"github.com/alecthomas/chroma/v2"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark-highlighting/v2"
-	extension "github.com/yuin/goldmark/extension"
-	rendererhtml "github.com/yuin/goldmark/renderer/html"
 	"github.com/lukgth/tofu/internal/config"
 	"github.com/lukgth/tofu/internal/post"
 	"github.com/lukgth/tofu/internal/site"
 	"github.com/lukgth/tofu/web"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark-highlighting/v2"
+	extension "github.com/yuin/goldmark/extension"
+	rendererhtml "github.com/yuin/goldmark/renderer/html"
 )
 
 var md = goldmark.New(
@@ -35,7 +35,7 @@ var md = goldmark.New(
 			),
 		),
 	),
-	goldmark.WithRendererOptions(rendererhtml.WithUnsafe()),
+	goldmark.WithRendererOptions(rendererhtml.WithHardWraps(), rendererhtml.WithUnsafe()),
 )
 
 // MarkdownToHTML converts markdown; on error it returns an escaped <pre> of the source instead of failing.
