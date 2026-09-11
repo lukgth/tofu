@@ -42,18 +42,25 @@ func NewSlide(offset float64) Slide {
 }
 
 // Update advances the slide; returns true when the tick should continue.
-func (s *Slide) Update(spring harmonica.Spring) bool {
+func (s *Slide) Update(sp spring) bool {
 	if s.Done {
 		return false
 	}
-	s.X, s.V = spring.Update(s.X, s.V, 0)
-	if math.Abs(s.X) < 0.1 && math.Abs(s.V) < 0.1 {
+	s.X, s.V = sp.Update(s.X, s.V, 0)
+	if abs(s.X) < 0.1 && abs(s.V) < 0.1 {
 		s.X = 0
 		s.V = 0
 		s.Done = true
 		return false
 	}
 	return true
+}
+
+func abs(f float64) float64 {
+	if f < 0 {
+		return -f
+	}
+	return f
 }
 
 // SlideCmd starts the 60fps tick loop if the slide isn't done.

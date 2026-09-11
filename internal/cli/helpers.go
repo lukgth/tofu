@@ -202,3 +202,38 @@ func ParseTags(s string) []string {
 	}
 	return out
 }
+
+// ListPosts returns plain list lines for the list command and TUI pager.
+func ListPosts(root string) ([]string, error) {
+	posts, err := post.List(filepath.Join(root, "content"))
+	if err != nil {
+		return nil, err
+	}
+	var lines []string
+	for _, p := range posts {
+		line := fmt.Sprintf("%s %s %s", p.Date.Format("2006-01-02"), p.Slug, p.Frontmatter.Title)
+		if p.Draft {
+			line += " (draft)"
+		}
+		lines = append(lines, line)
+	}
+	if lines == nil {
+		lines = []string{"no posts yet"}
+	}
+	return lines, nil
+}
+
+// CountPosts returns the number of non-draft posts under root/content/posts.
+func CountPosts(root string) (int, error) {
+	posts, err := post.List(filepath.Join(root, "content"))
+	if err != nil {
+		return 0, err
+	}
+	n := 0
+	for _, p := range posts {
+		if !p.Draft {
+			n++
+		}
+	}
+	return n, nil
+}
