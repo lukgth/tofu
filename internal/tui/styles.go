@@ -115,6 +115,7 @@ func newListStyles(isDark bool) (list.Styles, list.DefaultItemStyles) {
 func newList(items []list.Item, isDark bool, width, height int) list.Model {
 	styles, itemStyles := newListStyles(isDark)
 	delegate := list.NewDefaultDelegate()
+	delegate.ShowDescription = false
 	delegate.Styles = itemStyles
 	l := list.New(items, delegate, width, height)
 	l.Styles = styles

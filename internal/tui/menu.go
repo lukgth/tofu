@@ -79,9 +79,8 @@ func RunMenu(root string, opts Options) error {
 func runMenuOnce(root string, opts Options, initErr string) (tea.Model, error) {
 	o := normalize(opts)
 	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
-	l := newList(menuItems(root), isDark, o.Width, len(menuActions())+3)
+	l := newList(menuItems(root), isDark, o.Width, len(menuActions())+10)
 	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(true)
 	l.KeyMap.Filter = key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "filter"))
 
 	m := MenuModel{
@@ -238,8 +237,13 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.list.SetSize(msg.Width, msg.Height-5)
-		m.vp.setSize(msg.Width-2, msg.Height-7)
+		// The menu is a short single-line-item list; keep it content-sized
+		// instead of stretching to the full terminal height.
+		h := len(menuActions()) + 10
+		if h > msg.Height-5 {
+			h = msg.Height - 5
+		}
+		m.list.SetSize(msg.Width, h)
 		return m, nil
 
 	case tea.BackgroundColorMsg:
