@@ -46,6 +46,8 @@ type wizardQuitMsg struct{ err error }
 
 func runWizardProgram(w *wizardModel) error {
 	w.slide = NewSlide(8)
+	w.screen = "prompt"
+	w.focusStep()
 	p := tea.NewProgram(w)
 	_, err := p.Run()
 	return err
@@ -84,6 +86,7 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			w.errorMsg = msg.err.Error()
 			w.screen = "prompt"
 			w.stepIdx = 0
+			w.focusStep()
 			return w, nil
 		}
 		w.screen = "done"
@@ -105,10 +108,12 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				w.screen = "prompt"
 				w.stepIdx = 0
+				w.focusStep()
 				return w, nil
 			case "esc", "q":
 				w.screen = "prompt"
 				w.stepIdx = 0
+				w.focusStep()
 				return w, nil
 			}
 			var cmd tea.Cmd
@@ -127,6 +132,7 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return w, tea.Quit
 				}
 				w.stepIdx--
+				w.focusStep()
 				return w, nil
 			}
 			s := w.current()
@@ -148,6 +154,7 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if w.stepIdx >= len(w.steps) {
 						return w, w.gotoReview()
 					}
+					w.focusStep()
 					return w, nil
 				}
 				var cmd tea.Cmd
@@ -168,28 +175,49 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if w.stepIdx >= len(w.steps) {
 						return w, w.gotoReview()
 					}
+					w.focusStep()
 					return w, nil
 				}
 				var cmd tea.Cmd
 				s.choice.list, cmd = s.choice.list.Update(msg)
 				return w, cmd
 
+			case stepBody:
+				if msg.String() == "enter" {
+					val := strings.TrimSpace(s.area.Value())
+					if s.setter != nil {
+						if err := s.setter(val); err != nil {
+							w.errorMsg = err.Error()
+							return w, nil
+						}
+					}
+					w.errorMsg = ""
+					w.stepIdx++
+					if w.stepIdx >= len(w.steps) {
+						return w, w.gotoReview()
+					}
+					w.focusStep()
+					return w, nil
+				}
+				var cmd tea.Cmd
+				*s.area, cmd = s.area.Update(msg)
+				return w, cmd
+
 			case stepFile:
 				if msg.String() == "enter" {
 					pick := *s.pick
 					ok, val := pick.DidSelectFile(nil)
-					if ok {
-						if s.setter != nil {
-							if err := s.setter(val); err != nil {
-								w.errorMsg = err.Error()
-								return w, nil
-							}
+					if ok && s.setter != nil {
+						if err := s.setter(val); err != nil {
+							w.errorMsg = err.Error()
+							return w, nil
 						}
 					}
 					w.stepIdx++
 					if w.stepIdx >= len(w.steps) {
 						return w, w.gotoReview()
 					}
+					w.focusStep()
 					return w, nil
 				}
 				if msg.String() == "esc" {
@@ -197,6 +225,7 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if w.stepIdx >= len(w.steps) {
 						return w, w.gotoReview()
 					}
+					w.focusStep()
 					return w, nil
 				}
 				var cmd tea.Cmd
@@ -206,6 +235,20 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return w, nil
+}
+
+// focusStep focuses the interactive control of the current step. Inputs and
+// textareas are inert while unfocused in bubbles v2.
+func (w *wizardModel) focusStep() {
+	if s := w.current(); s != nil {
+		switch s.kind {
+		case stepInput:
+			s.input.Focus()
+		case stepBody:
+			s.area.Focus()
+		case stepChoice, stepFile:
+		}
+	}
 }
 
 func (w *wizardModel) gotoReview() tea.Cmd {
@@ -286,13 +329,15 @@ var _ = textinput.New
 
 // RunInit is the new-site wizard: asks for the basics, scaffolds the site.
 func RunInit(root string, opts Options) error {
+	if hasSite(root) {
+		return fmt.Errorf("a site already exists in %s (tofu.toml); edit it directly instead", root)
+	}
 	o := normalize(opts)
 	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
-
-	titleIn := newTextInput("My Tofu Site", "", o)
-	authorIn := newTextInput("Jane Doe", "", o)
-	descIn := newTextInput("A cute little blog", "", o)
-	urlIn := newTextInput("https://example.com", "", o)
+	titleIn := newTextInput("", "My Tofu Site", o)
+	authorIn := newTextInput("", "Jane Doe", o)
+	descIn := newTextInput("", "A cute little blog", o)
+	urlIn := newTextInput("", "https://example.com", o)
 
 	var cfg = cli.DefaultConfig()
 	steps := []step{

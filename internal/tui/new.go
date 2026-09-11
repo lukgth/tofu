@@ -9,7 +9,6 @@ import (
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textarea"
-	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
 	"tofu/internal/cli"
@@ -113,9 +112,7 @@ func RunNew(root string, opts Options) error {
 		},
 	}
 	w.slide = NewSlide(8)
-	p := tea.NewProgram(w)
-	_, err := p.Run()
-	return err
+	return runWizardProgram(w)
 }
 
 // ensure the editor choice and key bindings stay referenced if reused later.

@@ -49,14 +49,34 @@ type MenuModel struct {
 	width    int
 	height   int
 	srv      *http.Server
+	wizard   func(root string, o Options) error
 }
 
 type viewportDoneMsg struct{}
 
 type progressDoneMsg struct{ err error }
 
-// RunMenu shows the home menu and blocks until quit.
+// RunMenu shows the home menu in a loop. Wizard actions quit the menu, run
+// their wizard, and the menu re-opens fresh so labels reflect the site.
 func RunMenu(root string, opts Options) error {
+	errMsg := ""
+	for {
+		final, err := runMenuOnce(root, opts, errMsg)
+		if err != nil {
+			return err
+		}
+		errMsg = ""
+		mm, ok := final.(MenuModel)
+		if !ok || mm.wizard == nil {
+			return nil // quit or ctrl+c
+		}
+		if err := mm.wizard(root, opts); err != nil {
+			errMsg = err.Error()
+		}
+	}
+}
+
+func runMenuOnce(root string, opts Options, initErr string) (tea.Model, error) {
 	o := normalize(opts)
 	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
 	l := newList(menuItems(root), isDark, o.Width, len(menuActions())+3)
@@ -77,10 +97,9 @@ func RunMenu(root string, opts Options) error {
 		width:    o.Width,
 		height:   24,
 		slide:    NewSlide(8),
+		errorMsg: initErr,
 	}
-	p := tea.NewProgram(m)
-	_, err := p.Run()
-	return err
+	return tea.NewProgram(m).Run()
 }
 
 func hasSite(root string) bool {
@@ -130,10 +149,11 @@ func (m *MenuModel) selectedAction() (menuAction, error) {
 }
 
 func (m *MenuModel) runInit() tea.Cmd {
-	return m.runTask("scaffolding site", func() error {
-		_, err := cli.InitScaffold(m.root, false)
-		return err
-	})
+	if hasSite(m.root) {
+		m.errorMsg = "a site already exists here (tofu.toml)"
+		return nil
+	}
+	return m.runWizard(RunInit)
 }
 
 func (m *MenuModel) runNew() tea.Cmd {
@@ -194,13 +214,11 @@ func (m *MenuModel) runTask(label string, work func() error) tea.Cmd {
 	)
 }
 
-// runWizard exits the menu program, runs the wizard, and the caller re-runs the menu.
+// runWizard records the wizard and quits the menu; the RunMenu loop runs it
+// and re-opens the menu fresh afterwards.
 func (m *MenuModel) runWizard(fn func(root string, o Options) error) tea.Cmd {
-	return tea.Batch(func() tea.Msg { return wizardLaunchMsg{fn: fn} }, tea.Quit)
-}
-
-type wizardLaunchMsg struct {
-	fn func(root string, o Options) error
+	m.wizard = fn
+	return tea.Quit
 }
 
 func joinLines(lines []string) string {
@@ -253,7 +271,8 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 				m.errorMsg = ""
-				return m, action.run(&m)
+				cmd := action.run(&m)
+				return m, cmd
 			}
 			var cmd tea.Cmd
 			m.list, cmd = m.list.Update(msg)
@@ -306,8 +325,6 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.screen = screenList
 		return m, nil
 
-	case wizardLaunchMsg:
-		return m, nil
 	}
 	return m, nil
 }

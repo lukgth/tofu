@@ -1,9 +1,73 @@
 package tui
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"charm.land/bubbles/v2/textarea"
+	tea "charm.land/bubbletea/v2"
 )
+
+// enterKey builds a real enter press for driving wizard Update directly.
+func enterKey() tea.KeyPressMsg {
+	return tea.KeyPressMsg{Code: tea.KeyEnter}
+}
+
+// TestWizardEngineWalk drives the real wizardModel.Update through a site-like
+// wizard: input steps, a body step, review, and finish. This is the flow that
+// silently died before (unfocused inputs, missing stepBody case).
+func TestWizardEngineWalk(t *testing.T) {
+	ti := newTextInput("", "My Site", normalize(Options{}))
+	area := textarea.New()
+	area.SetStyles(textareaStyles())
+	steps := []step{
+		{kind: stepInput, label: "title", input: &ti, setter: func(v string) error {
+			if v == "" {
+				return fmt.Errorf("a title is required")
+			}
+			title := v
+			_ = title
+			return nil
+		}},
+		{kind: stepBody, label: "body", area: &area, setter: func(v string) error {
+			return nil
+		}},
+	}
+	w := &wizardModel{
+		opts:  normalize(Options{}),
+		title: "test",
+		steps: steps,
+		finish: func(w *wizardModel) error {
+			return nil
+		},
+	}
+	w.slide = NewSlide(8)
+	w.screen = "prompt"
+	w.focusStep()
+
+	// enter on title (has default value) -> advances to body step
+	m, _ := w.Update(enterKey())
+	w = m.(*wizardModel)
+	if w.current() != &w.steps[1] {
+		t.Fatalf("expected to advance to body step, screen=%q stepIdx=%d", w.screen, w.stepIdx)
+	}
+	// enter on body -> review
+	m, _ = w.Update(enterKey())
+	w = m.(*wizardModel)
+	if w.screen != "review" {
+		t.Fatalf("expected review after body step, screen=%q", w.screen)
+	}
+	// enter on review (Yes default) starts finish; pump the result to done
+	m, _ = w.Update(enterKey())
+	w = m.(*wizardModel)
+	m, _ = w.Update(wizardQuitMsg{})
+	if w.screen != "done" {
+		t.Fatalf("expected done screen, screen=%q", w.screen)
+	}
+}
 
 func TestMenuItemsOrderAndLabels(t *testing.T) {
 	want := []string{
@@ -33,6 +97,17 @@ func TestMenuItemsOrderAndLabels(t *testing.T) {
 	// quit never needs a site
 	if items[6].(menuItem).label != "Quit" {
 		t.Errorf("quit label = %q", items[6].(menuItem).label)
+	}
+}
+
+func TestRunInitRefusesExistingSite(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "tofu.toml"), []byte("title = 'x'\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := RunInit(dir, Options{})
+	if err == nil || !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("want already-exists refusal, got %v", err)
 	}
 }
 

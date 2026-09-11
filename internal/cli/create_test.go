@@ -77,3 +77,26 @@ func TestInitScaffold(t *testing.T) {
 		t.Errorf("force re-init should create nothing new, got %v", created2)
 	}
 }
+
+func TestInitScaffoldIgnoresDotfiles(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{".git", ".gitignore", ".DS_Store"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := InitScaffold(dir, false); err != nil {
+		t.Fatalf("dotfiles-only dir should scaffold, got %v", err)
+	}
+}
+
+func TestInitScaffoldRefusesVisibleFiles(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := InitScaffold(dir, false)
+	if err == nil || !strings.Contains(err.Error(), "not empty") {
+		t.Fatalf("want not-empty refusal, got %v", err)
+	}
+}

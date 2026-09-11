@@ -67,9 +67,17 @@ const samplePost = "# %s\n\nWrite your post here.\n"
 const sampleCustomCSS = "/* your custom styles, loaded after style.css */\n"
 
 // InitScaffold creates a new site in dir. Refuses non-empty dirs unless force.
+// Hidden dotfiles (.git, .DS_Store, ...) don't count as content: scaffolding
+// never overwrites existing files, so they're safe to scaffold alongside.
 func InitScaffold(dir string, force bool) ([]string, error) {
 	entries, err := os.ReadDir(dir)
-	if err == nil && len(entries) > 0 && !force {
+	visible := 0
+	for _, e := range entries {
+		if !strings.HasPrefix(e.Name(), ".") {
+			visible++
+		}
+	}
+	if err == nil && visible > 0 && !force {
 		return nil, fmt.Errorf("%s is not empty (use --force to write anyway)", dir)
 	}
 	if err != nil && !os.IsNotExist(err) {
