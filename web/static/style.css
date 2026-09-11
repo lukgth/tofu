@@ -372,7 +372,7 @@ blockquote {
   color: var(--blockquote-color);
 }
 blockquote p {
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .tags {
