@@ -210,8 +210,8 @@ func TestSiteTitleHeader(t *testing.T) {
 		if strings.Contains(timeRule, "monospace") {
 			t.Error("time rule must not set a monospace font-family")
 		}
-		if !strings.Contains(c, "body.home h1, body.home h2, body.home h3") {
-			t.Error("style.css missing body.home heading override")
+		if !strings.Contains(c, "h1, h2, h3, h4, h5, h6 {\n  font-family: var(--font-secondary)") {
+			t.Error("style.css headings must use Rubik (--font-secondary)")
 		}
 	})
 }

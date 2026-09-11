@@ -20,7 +20,10 @@ func TestCreatePostAndCollision(t *testing.T) {
 	if !strings.Contains(string(b), "title: \"Hello World\"") || !strings.Contains(string(b), "date: 2026-02-03") {
 		t.Errorf("bad frontmatter:\n%s", b)
 	}
-	if !strings.Contains(string(b), "# Hello World") {
+	if strings.Contains(string(b), "# Hello World") {
+		t.Errorf("starter body must not repeat the title:\n%s", b)
+	}
+	if !strings.Contains(string(b), "write your post here.") {
 		t.Errorf("missing starter body:\n%s", b)
 	}
 	_, err = CreatePost(root, NewPostInput{Title: "Hello World"})
