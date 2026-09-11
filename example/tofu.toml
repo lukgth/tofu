@@ -4,7 +4,7 @@ description = "A cute little blog"
 base_url = "https://example.com"
 language = "en"
 recent_count = 5
-footer = "Made with tofu 🧊"
+footer = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
 
 [theme]
   width = "47.5rem"
@@ -18,7 +18,7 @@ footer = "Made with tofu 🧊"
   blink = "#e4d9f6"
   code_bg = "#efedf2"
   heading = "#4c3a63"
-  text = "#4a4453"
+  text = "#444444"
   link = "#9d6bb8"
   visited = "#b48cb8"
   blockquote = "#5c4d6b"

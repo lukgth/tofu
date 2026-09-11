@@ -93,8 +93,27 @@ func TestBuildOutputTree(t *testing.T) {
 	if !strings.Contains(string(css), ".title h1") || !strings.Contains(string(css), "display: none") {
 		t.Error("style.css missing .title h1 display:none")
 	}
-	if !strings.Contains(string(css), "cursor-blink") {
-		t.Error("style.css missing cursor-blink keyframes")
+	if strings.Contains(string(css), "cursor-blink") {
+		t.Error("style.css must not have cursor-blink keyframes")
+	}
+	if !strings.Contains(string(css), "font-style: italic") {
+		t.Error("style.css missing italic time")
+	}
+}
+
+func TestFooterRendersHTML(t *testing.T) {
+	root := scaffoldSite(t)
+	os.WriteFile(filepath.Join(root, "tofu.toml"), []byte("title = \"Test Site\"\nbase_url = \"https://example.com\"\nrecent_count = 5\nlanguage = \"en\"\ndescription = \"desc\"\nfooter = \"powered by <a href='https://github.com/lukgth/tofu'>tofu</a>\"\n[homepage]\nheading = \"Welcome\"\nbody_file = \"content/home.md\"\n"), 0o644)
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+	idx, err := os.ReadFile(filepath.Join(out, "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(idx), "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>") {
+		t.Errorf("footer link got escaped or lost: %.300s", idx)
 	}
 }
 

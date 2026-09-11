@@ -347,14 +347,14 @@ func (m MenuModel) View() tea.View {
 	case screenViewport:
 		return tea.NewView(lipgloss.JoinVertical(
 			lipgloss.Left,
-			AnimatedTitle(m.slide.X, "tofu 🧊 "+m.vpTitle),
+			AnimatedTitle(m.slide.X, "tofu "+m.vpTitle),
 			m.vp.view(),
 			HelpFooter(m.opts),
 		))
 	case screenProgress:
 		return tea.NewView(lipgloss.JoinVertical(
 			lipgloss.Left,
-			AnimatedTitle(m.slide.X, "tofu 🧊"),
+			AnimatedTitle(m.slide.X, "tofu"),
 			m.spinnerM.view()+" "+m.progMsg,
 			m.prog.view(),
 		))
@@ -365,7 +365,7 @@ func (m MenuModel) View() tea.View {
 	}
 	return tea.NewView(lipgloss.JoinVertical(
 		lipgloss.Left,
-		AnimatedTitle(m.slide.X, "tofu 🧊"),
+		AnimatedTitle(m.slide.X, "tofu"),
 		m.list.View(),
 		footer,
 	))

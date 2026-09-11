@@ -13,7 +13,7 @@ description = "A cute little blog"
 base_url = "https://example.com"
 language = "en"
 recent_count = 5
-footer = "Made with tofu \U0001F9CA"
+footer = "powered by tofu"
 
 [theme]
 width = "720px"
@@ -94,7 +94,7 @@ func TestLoadFullSample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Title != "My Tofu Site" || s.Footer != "Made with tofu 🧊" {
+	if s.Title != "My Tofu Site" || s.Footer != "powered by tofu" {
 		t.Fatalf("bad scalars: %+v", s)
 	}
 	if len(s.Theme.DarkBackground) == 0 || s.Theme.Link != "#3273dc" {

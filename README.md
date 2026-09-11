@@ -1,4 +1,4 @@
-# tofu 🧊
+# tofu
 
 a tiny cute static blog generator built with [Bubble Tea], [Bubbles],
 [Lip Gloss], and [Harmonica].
@@ -6,7 +6,7 @@ a tiny cute static blog generator built with [Bubble Tea], [Bubbles],
 ```text
 $ tofu
 
-  tofu 🧊
+  tofu
 
   • New site            • Build site
   • New blog post       • Preview (serve)
@@ -102,7 +102,7 @@ Everything lives in `tofu.toml` at the site root:
 title = "My Tofu Site"
 author = "Jane Doe"
 recent_count = 5
-footer = "Made with tofu 🧊"
+footer = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
 
 [theme]
 width = "720px"

@@ -288,7 +288,7 @@ func (w *wizardModel) View() tea.View {
 	case "working":
 		return tea.NewView(lipgloss.JoinVertical(
 			lipgloss.Left,
-			AnimatedTitle(w.slide.X, "tofu 🧊"),
+			AnimatedTitle(w.slide.X, "tofu"),
 			w.spinnerM.view()+" "+w.progMsg,
 			w.prog.view(),
 		))
@@ -299,7 +299,7 @@ func (w *wizardModel) View() tea.View {
 		}
 		return tea.NewView(lipgloss.JoinVertical(
 			lipgloss.Left,
-			AnimatedTitle(w.slide.X, "tofu 🧊 "+w.title),
+			AnimatedTitle(w.slide.X, "tofu "+w.title),
 			w.vp.view(),
 			"",
 			w.confirm.view(w.isDark),
@@ -308,7 +308,7 @@ func (w *wizardModel) View() tea.View {
 	case "done":
 		return tea.NewView(lipgloss.JoinVertical(
 			lipgloss.Left,
-			AnimatedTitle(w.slide.X, "tofu 🧊"),
+			AnimatedTitle(w.slide.X, "tofu"),
 			Accent.Render("✓ Done! "+w.doneMsg),
 			HelpFooter(w.opts),
 		))
@@ -337,7 +337,7 @@ func (w *wizardModel) View() tea.View {
 	}
 	return tea.NewView(lipgloss.JoinVertical(
 		lipgloss.Left,
-		AnimatedTitle(w.slide.X, "tofu 🧊 "+w.title),
+		AnimatedTitle(w.slide.X, "tofu "+w.title),
 		Dim.Render(label),
 		body,
 		footer,

@@ -12,7 +12,6 @@
   --primary: {{.Theme.Primary}};
   --secondary: {{.Theme.Secondary}};
   --accent: {{.Theme.Accent}};
-  --blink: {{.Theme.Blink}};
   --code-bg: {{.Theme.CodeBG}};
 }
 
@@ -27,7 +26,6 @@
     --primary: {{.Theme.DarkPrimary}};
     --secondary: {{.Theme.DarkSecondary}};
     --accent: {{.Theme.DarkAccent}};
-    --blink: {{.Theme.DarkBlink}};
     --code-bg: {{.Theme.DarkCodeBG}};
   }
 }
@@ -136,6 +134,10 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 2.5rem;
 }
 
+nav h2 {
+  font-family: var(--font-secondary);
+}
+
 body.home h1, body.home h2, body.home h3 {
   font-family: var(--font-secondary);
 }
@@ -155,16 +157,6 @@ h3 {
 
 .title h1 {
   display: none;
-}
-
-nav h2::after {
-  content: "a";
-  animation: cursor-blink 1.0s steps(1) infinite;
-  color: var(--blink);
-}
-
-@keyframes cursor-blink {
-  50% { opacity: 0; }
 }
 
 .squiggle {

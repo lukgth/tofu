@@ -158,8 +158,8 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 	full := struct {
 		Lang, Title, SiteTitle, Description, ExtraHead string
 		Nav                                            []navLink
-		Content                                        template.HTML
-		Footer, BodyClass                              string
+		Content, Footer                                template.HTML
+		BodyClass                                      string
 	}{
 		Lang:        ctx.Lang,
 		Title:       ctx.Title,
@@ -168,7 +168,7 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 		ExtraHead:   ctx.ExtraHead,
 		Nav:         ctx.Nav,
 		Content:     template.HTML(content.String()),
-		Footer:      ctx.Footer,
+		Footer:      template.HTML(ctx.Footer),
 		BodyClass:   ctx.BodyClass,
 	}
 	var out bytes.Buffer

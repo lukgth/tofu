@@ -142,7 +142,7 @@ func (m editPickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m editPickerModel) View() tea.View {
 	return tea.NewView(lipgloss.JoinVertical(
 		lipgloss.Left,
-		AnimatedTitle(m.slide.X, "tofu 🧊 edit"),
+		AnimatedTitle(m.slide.X, "tofu edit"),
 		m.table.View(),
 		HelpFooter(m.opts),
 	))
