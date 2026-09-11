@@ -52,5 +52,19 @@
       paint();
     })();
   </script>
+  <script>
+    (function () {
+      // Italicize visited post links. :visited can't set font-style
+      // (MDN: color properties only), and no JS API reads history, so
+      // track visits ourselves. localStorage is the simplest store.
+      var path = location.pathname;
+      if (path.startsWith("/articles/") && path.endsWith(".html") && !path.startsWith("/articles/tag/")) {
+        try { localStorage.setItem("v:" + path, 1); } catch (e) {}
+      }
+      document.querySelectorAll('ul.blog-posts a[href^="/articles/"]').forEach(function (a) {
+        try { if (localStorage.getItem("v:" + a.getAttribute("href"))) a.classList.add("visited-post"); } catch (e) {}
+      });
+    })();
+  </script>
 </body>
 </html>

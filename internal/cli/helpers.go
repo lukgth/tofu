@@ -46,7 +46,7 @@ func DefaultConfig() config.Site {
 			DarkBackground: "#372947",
 			DarkText:       "#e5d9de",
 			DarkLink:       "#d5b8f2",
-			DarkVisited:    "#c9aee4",
+			DarkVisited:    "#a98fc4",
 			DarkBlockquote: "#c4b5e0",
 			DarkPrimary:    "#8a6fc0",
 			DarkSecondary:  "#221e44",

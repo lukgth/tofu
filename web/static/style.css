@@ -9,7 +9,6 @@
   --link-color: {{.Theme.Link}};
   --visited-color: {{.Theme.Visited}};
   --blockquote-color: {{.Theme.Blockquote}};
-  --blink: {{.Theme.Blink}};
   --primary: {{.Theme.Primary}};
   --secondary: {{.Theme.Secondary}};
   --accent: {{.Theme.Accent}};
@@ -175,6 +174,10 @@ nav a {
   display: inline-block;
 }
 
+.visited-post {
+  font-style: italic;
+}
+
 
 strong, b {
   color: var(--heading-color);
@@ -187,36 +190,9 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
   margin-top: 2.5rem;
 }
-
 nav h2 {
   color: var(--header-color);
-  display: inline-block;
 }
-nav h2::after {
-  content: "";
-  display: inline-block;
-  width: 0.55em;
-  height: 0.12em;
-  margin-left: 0.15em;
-  vertical-align: baseline;
-  background-color: var(--blink);
-  animation: blink 1.1s steps(1) infinite;
-}
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  nav h2::after {
-    animation: none;
-  }
-  main {
-    animation: none;
-  }
-}
-
 
 h1 {
   font-size: 1.5em;
