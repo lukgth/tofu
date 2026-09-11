@@ -128,8 +128,8 @@ func newList(items []list.Item, isDark bool, width, height int) list.Model {
 // selected row (matching the menu), accent-tinted header, dim unselected.
 func tableStyles() table.Styles {
 	return table.Styles{
-		Header:   lipgloss.NewStyle().Foreground(lipgloss.Color(colorDim)).Padding(0, 1),
-		Cell:     lipgloss.NewStyle().Padding(0, 1),
+		Header: lipgloss.NewStyle().Foreground(lipgloss.Color(colorDim)).Padding(0, 1),
+		Cell:   lipgloss.NewStyle().Padding(0, 1),
 		Selected: lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, false, true).
 			BorderForeground(lipgloss.Color(colorCursor)).
