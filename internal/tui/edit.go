@@ -3,7 +3,6 @@ package tui
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -419,6 +418,13 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 		{kind: stepChoice, label: "body", choice: &editorChoice, setter: func(v string) error {
 			editorWanted = strings.HasPrefix(v, "Open")
 			return nil
+		}, branch: func(w *wizardModel) tea.Cmd {
+			// The external editor replaces the textarea step entirely:
+			// jump straight to review.
+			if editorWanted {
+				w.gotoReview()
+			}
+			return nil
 		}},
 		{kind: stepBody, label: "body (textarea)", area: &body, setter: func(v string) error {
 			newBody = v
@@ -437,22 +443,6 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 		prog:     newProgressModel(o.Width - 8),
 		vp:       newViewport(o.Width, 14),
 		finish: func(w *wizardModel) error {
-			if editorWanted {
-				if ed := os.Getenv("EDITOR"); ed != "" {
-					cmd := exec.Command(ed, path)
-					cmd.Stdin = os.Stdin
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					if err := cmd.Run(); err != nil {
-						return fmt.Errorf("editor failed: %w", err)
-					}
-					return post.UpdateFrontmatter(path, func(f *post.Frontmatter) error {
-						applyForm(f, &fm)
-						return nil
-					})
-				}
-				return fmt.Errorf("EDITOR is not set; quick edit used instead (or run `tofu edit --title ...`)")
-			}
 			if err := post.UpdateFrontmatter(path, func(f *post.Frontmatter) error {
 				applyForm(f, &fm)
 				return nil
@@ -460,6 +450,22 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 				return err
 			}
 			return post.SetBody(path, newBody)
+		},
+		execFinish: func(w *wizardModel) tea.Cmd {
+			cmd, err := resolveEditorCmd(path)
+			if err != nil {
+				return func() tea.Msg { return wizardQuitMsg{err: err} }
+			}
+			return tea.ExecProcess(cmd, func(runErr error) tea.Msg {
+				if runErr != nil {
+					return wizardQuitMsg{err: fmt.Errorf("editor failed: %w", runErr)}
+				}
+				err := post.UpdateFrontmatter(path, func(f *post.Frontmatter) error {
+					applyForm(f, &fm)
+					return nil
+				})
+				return wizardQuitMsg{err: err}
+			})
 		},
 		summary: func(w *wizardModel) string {
 			return strings.Join([]string{
@@ -471,7 +477,9 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 			}, "\n")
 		},
 	}
-	_ = newBody
+	if !editorWanted {
+		w.execFinish = nil
+	}
 	return runWizardProgram(w)
 }
 

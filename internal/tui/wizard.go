@@ -26,6 +26,9 @@ type step struct {
 	choice *choiceModel
 	pick   *filepicker.Model
 	setter func(string) error
+	// branch, when set on a choice step, replaces the default
+	// advance-to-next-step after a successful setter.
+	branch func(*wizardModel) tea.Cmd
 }
 
 // normalize fills defaults for Options.

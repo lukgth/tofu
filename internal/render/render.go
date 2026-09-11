@@ -383,7 +383,7 @@ func writePostsList(s site.Site, base renderCtx, outDir string) error {
 	data := struct {
 		Heading string
 		Posts   []entry
-	}{"Posts", entries(s.Posts)}
+	}{"posts", entries(s.Posts)}
 	return page(t, "posts.html", data, ctx, filepath.Join(outDir, "articles", "index.html"))
 }
 

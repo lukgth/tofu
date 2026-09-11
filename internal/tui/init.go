@@ -22,24 +22,25 @@ type spring interface {
 // wizardModel drives the multi-step prompts of one wizard.
 // Screens: prompt -> review -> working -> done.
 type wizardModel struct {
-	root     string
-	opts     Options
-	screen   string
-	title    string
-	isDark   bool
-	slide    Slide
-	spring   spring
-	spinnerM spinnerModel
-	prog     progressModel
-	progMsg  string
-	vp       viewportModel
-	confirm  choiceModel
-	errorMsg string
-	doneMsg  string
-	steps    []step
-	stepIdx  int
-	finish   func(w *wizardModel) error
-	summary  func(w *wizardModel) string
+	root       string
+	opts       Options
+	screen     string
+	title      string
+	isDark     bool
+	slide      Slide
+	spring     spring
+	spinnerM   spinnerModel
+	prog       progressModel
+	progMsg    string
+	vp         viewportModel
+	confirm    choiceModel
+	errorMsg   string
+	doneMsg    string
+	steps      []step
+	stepIdx    int
+	finish     func(w *wizardModel) error
+	execFinish func(w *wizardModel) tea.Cmd
+	summary    func(w *wizardModel) string
 }
 
 type wizardQuitMsg struct{ err error }
@@ -307,6 +308,9 @@ func (w *wizardModel) doChoiceAdvance() tea.Cmd {
 		}
 	}
 	w.errorMsg = ""
+	if s.branch != nil {
+		return s.branch(w)
+	}
 	w.stepIdx++
 	if w.stepIdx >= len(w.steps) {
 		return w.gotoReview()
@@ -316,6 +320,9 @@ func (w *wizardModel) doChoiceAdvance() tea.Cmd {
 }
 
 func (w *wizardModel) doFinish() tea.Cmd {
+	if w.execFinish != nil {
+		return w.execFinish(w)
+	}
 	return func() tea.Msg {
 		err := w.finish(w)
 		return wizardQuitMsg{err: err}

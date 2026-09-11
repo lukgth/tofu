@@ -135,7 +135,7 @@ p {
 }
 
 mark {
-  background-color: var(--highlight);
+  background-color: color-mix(in srgb, var(--highlight) 45%, transparent);
   border-radius: 4px;
   padding: 0 3px;
 }
@@ -247,7 +247,7 @@ time {
   font-size: 0.875rem;
   padding: 0 0.3125rem;
   border-radius: 3px;
-  background-color: var(--highlight);
+  background-color: color-mix(in srgb, var(--highlight) 45%, transparent);
   color: #1d1530;
 }
 @media (prefers-color-scheme: dark) {
