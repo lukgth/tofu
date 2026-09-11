@@ -44,7 +44,7 @@ quits, `/` filters.
 Requires Go 1.24+.
 
 ```sh
-git clone https://github.com/you/tofu
+git clone https://github.com/lukgth/tofu
 cd tofu
 CGO_ENABLED=0 go build -ldflags="-s -w" -o tofu ./cmd/tofu
 ```
