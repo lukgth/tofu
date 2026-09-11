@@ -128,7 +128,7 @@ p {
 }
 
 mark {
-  background-color: var(--accent);
+  background-color: color-mix(in srgb, var(--accent) 85%, transparent);
   border-radius: 4px;
   padding: 0 3px;
 }
@@ -141,13 +141,18 @@ a {
 
 a:hover {
   transform: translateY(-1.5px);
-  filter: brightness(0.6);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
 }
 
 nav a {
   margin-right: 8px;
   display: inline-block;
 }
+.visited-post {
+  font-style: italic;
+}
+
 
 strong, b {
   color: var(--heading-color);
@@ -227,25 +232,24 @@ time {
   font-size: 0.875rem;
   padding: 0 0.3125rem;
   border-radius: 3px;
-  background-color: var(--accent);
+  background-color: color-mix(in srgb, var(--accent) 85%, transparent);
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.light) time {
-    color: black;
+    color: var(--text-color);
   }
 }
 
 :root.dark time {
-  color: black;
+  color: var(--text-color);
 }
 #theme-toggle {
   font-family: var(--font-main);
   font-size: 0.875rem;
-  background: var(--accent);
-  color: var(--text-color);
+  background: unset;
+  color: var(--link-color);
   border: unset;
-  border-radius: 3px;
-  padding: 0 0.3125rem;
+  padding: unset;
   cursor: pointer;
   transition: transform 0.3s ease;
 }

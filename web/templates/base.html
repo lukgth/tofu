@@ -52,5 +52,24 @@
       paint();
     })();
   </script>
+  <script>
+    (function () {
+      // Remember visited post pages and italicize their titles in lists.
+      if (location.pathname.startsWith("/articles/") && location.pathname.endsWith(".html")
+          && !location.pathname.startsWith("/articles/tag/")) {
+        try {
+          var seen = JSON.parse(localStorage.getItem("visited-posts") || "{}");
+          seen[location.pathname] = true;
+          localStorage.setItem("visited-posts", JSON.stringify(seen));
+        } catch (e) {}
+      }
+      document.querySelectorAll('ul.blog-posts a[href^="/articles/"]').forEach(function (a) {
+        try {
+          var seen = JSON.parse(localStorage.getItem("visited-posts") || "{}");
+          if (seen[a.getAttribute("href")]) a.classList.add("visited-post");
+        } catch (e) {}
+      });
+    })();
+   </script>
 </body>
 </html>

@@ -14,6 +14,7 @@ import (
 
 	"github.com/yuin/goldmark"
 	extension "github.com/yuin/goldmark/extension"
+	rendererhtml "github.com/yuin/goldmark/renderer/html"
 	"tofu/internal/config"
 	"tofu/internal/post"
 	"tofu/internal/site"
@@ -22,6 +23,7 @@ import (
 
 var md = goldmark.New(
 	goldmark.WithExtensions(extension.GFM, extension.Footnote, extension.Typographer, Highlight),
+	goldmark.WithRendererOptions(rendererhtml.WithUnsafe()),
 )
 
 // MarkdownToHTML converts markdown; on error it returns an escaped <pre> of the source instead of failing.
