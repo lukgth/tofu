@@ -2,4 +2,4 @@
 {{if .Posts}}<ul class="blog-posts">
   {{range .Posts}}<li><span><time datetime="{{.DateISO}}">{{.DatePretty}}</time></span><a href="/articles/{{.Slug}}.html">{{.Title}}</a></li>
   {{end}}</ul>
-{{else}}<p>No posts yet.</p>{{end}}
+{{else}}<p>no posts yet.</p>{{end}}

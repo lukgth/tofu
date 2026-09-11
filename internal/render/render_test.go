@@ -130,7 +130,7 @@ func TestBuildEmptyPosts(t *testing.T) {
 	if strings.Contains(string(s), "<ul") {
 		t.Error("empty site must not render <ul>")
 	}
-	if !strings.Contains(string(s), "No posts yet.") {
+	if !strings.Contains(string(s), "no posts yet.") {
 		t.Error("empty site must show No posts yet.")
 	}
 }
