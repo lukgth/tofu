@@ -255,3 +255,18 @@ func TestBuildHomeBodyAndStaticCopy(t *testing.T) {
 		t.Error("static/ not copied")
 	}
 }
+
+func TestMarkdownHardWraps(t *testing.T) {
+	got := MarkdownToHTML("here's my:\ndiscord username: `luk_`\nmy email: me (at) lukgth.cloud\ni host @ [nyara.cloud](https://nyara.cloud)\n")
+	for _, want := range []string{"here&rsquo;s my:<br>", "<code>luk_</code><br>", "<a href=\"https://nyara.cloud\">nyara.cloud</a></p>"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+	if strings.Contains(got, "<p>line one\nline two") {
+		t.Error("soft breaks were joined")
+	}
+	if got := MarkdownToHTML("a\n\nb\n"); !strings.Contains(got, "<p>a</p>\n<p>b</p>") {
+		t.Errorf("blank-line paragraphs broken: %q", got)
+	}
+}
