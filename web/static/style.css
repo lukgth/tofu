@@ -129,6 +129,7 @@ strong, b {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-main);
   color: var(--heading-color);
+  letter-spacing: normal;
   line-height: 1.2;
   margin-top: 2.5rem;
 }
@@ -171,9 +172,10 @@ h3 {
 
 pre {
   font-family: var(--font-main);
+  letter-spacing: normal;
   font-size: 0.875rem;
-  background-color: var(--code-bg);
   border-radius: 10px;
+  background-color: var(--code-bg);
   padding: 1.25rem;
   text-wrap: wrap;
   overflow-x: auto;
@@ -186,6 +188,7 @@ pre code {
 
 code {
   font-family: var(--font-main);
+  letter-spacing: normal;
   padding: 0.15rem 0.4rem;
   border-radius: 10px;
   background-color: var(--code-bg);
@@ -267,9 +270,9 @@ hr {
 .tags {
   margin: 0.5rem 0 1.5rem;
 }
-
 .tag {
   font-family: var(--font-main);
+  letter-spacing: normal;
   font-size: 0.8rem;
 }
 
