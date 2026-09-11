@@ -20,6 +20,7 @@
     --text-color: {{.Theme.DarkText}};
     --heading-color: {{.Theme.DarkText}};
     --header-color: {{.Theme.DarkHeaderColor}};
+    --link-color: {{.Theme.DarkLink}};
     --visited-color: {{.Theme.DarkVisited}};
     --blockquote-color: {{.Theme.DarkBlockquote}};
     --primary: {{.Theme.DarkPrimary}};
@@ -36,6 +37,7 @@
   --text-color: {{.Theme.DarkText}};
   --heading-color: {{.Theme.DarkText}};
   --header-color: {{.Theme.DarkHeaderColor}};
+  --link-color: {{.Theme.DarkLink}};
   --visited-color: {{.Theme.DarkVisited}};
   --blockquote-color: {{.Theme.DarkBlockquote}};
   --primary: {{.Theme.DarkPrimary}};
@@ -48,6 +50,7 @@
   --text-color: {{.Theme.Text}};
   --heading-color: {{.Theme.Text}};
   --header-color: {{.Theme.HeaderColor}};
+  --link-color: {{.Theme.Link}};
   --visited-color: {{.Theme.Visited}};
   --blockquote-color: {{.Theme.Blockquote}};
   --primary: {{.Theme.Primary}};
@@ -231,12 +234,12 @@ time {
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.light) time {
-    color: var(--text-color);
+    color: #1d1530;
   }
 }
 
 :root.dark time {
-  color: var(--text-color);
+  color: #1d1530;
 }
 #theme-toggle {
   font-family: var(--font-main);
@@ -340,7 +343,12 @@ ul.blog-posts li span {
   flex: 0 0 auto;
 }
 
-ul.blog-posts li a:visited {
+ul.blog-posts li a {
+  color: var(--link-color);
+}
+
+ul.blog-posts li a:visited,
+ul.blog-posts li a.visited-post {
   color: var(--visited-color);
 }
 
