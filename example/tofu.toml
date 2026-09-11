@@ -1,0 +1,40 @@
+title = "My Tofu Site"
+author = "Jane Doe"
+description = "A cute little blog"
+base_url = "https://example.com"
+language = "en"
+recent_count = 5
+footer = "Made with tofu 🧊"
+
+[theme]
+  width = "720px"
+  font_main = "Verdana, sans-serif"
+  font_secondary = "Verdana, sans-serif"
+  font_scale = "1em"
+  background = "#fff"
+  heading = "#222"
+  text = "#444"
+  link = "#3273dc"
+  visited = "#8b6fcb"
+  blockquote = "#222"
+  dark_background = "#01242e"
+  dark_heading = "#eee"
+  dark_text = "#ddd"
+  dark_link = "#8cc2dd"
+  dark_visited = "#8b6fcb"
+  dark_blockquote = "#ccc"
+
+[header]
+  title = "My Tofu Site"
+
+  [[header.nav]]
+    label = "Home"
+    url = "/"
+
+  [[header.nav]]
+    label = "Blog"
+    url = "/articles/"
+
+[homepage]
+  heading = "Hello!"
+  body_file = "content/home.md"
