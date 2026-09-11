@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	texttemplate "text/template"
 	"time"
 
 	"github.com/yuin/goldmark"
@@ -20,7 +21,7 @@ import (
 )
 
 var md = goldmark.New(
-	goldmark.WithExtensions(extension.GFM, extension.Footnote, extension.Typographer),
+	goldmark.WithExtensions(extension.GFM, extension.Footnote, extension.Typographer, Highlight),
 )
 
 // MarkdownToHTML converts markdown; on error it returns an escaped <pre> of the source instead of failing.
@@ -42,7 +43,7 @@ type renderCtx struct {
 	Nav         []navLink
 	Content     template.HTML
 	Footer      string
-	Tagline     string
+	BodyClass   string
 }
 
 type navLink struct {
@@ -140,7 +141,6 @@ func baseCtx(cfg config.Site) renderCtx {
 		Description: cfg.Description,
 		Nav:         nav,
 		Footer:      cfg.Footer,
-		Tagline:     cfg.Header.Tagline,
 	}
 }
 
@@ -159,7 +159,7 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 		Lang, Title, SiteTitle, Description, ExtraHead string
 		Nav                                            []navLink
 		Content                                        template.HTML
-		Footer, Tagline                                string
+		Footer, BodyClass                              string
 	}{
 		Lang:        ctx.Lang,
 		Title:       ctx.Title,
@@ -169,7 +169,7 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 		Nav:         ctx.Nav,
 		Content:     template.HTML(content.String()),
 		Footer:      ctx.Footer,
-		Tagline:     ctx.Tagline,
+		BodyClass:   ctx.BodyClass,
 	}
 	var out bytes.Buffer
 	if err := t.ExecuteTemplate(&out, "base.html", full); err != nil {
@@ -179,7 +179,7 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 }
 
 func renderCSS(cfg config.Site) ([]byte, error) {
-	t, err := template.ParseFS(web.Static, "static/style.css")
+	t, err := texttemplate.ParseFS(web.Static, "static/style.css")
 	if err != nil {
 		return nil, err
 	}
@@ -268,6 +268,7 @@ func writeIndex(siteRoot string, s site.Site, base renderCtx, outDir string) err
 	if ctx.Title == "" {
 		ctx.Title = s.Config.Title
 	}
+	ctx.BodyClass = "home"
 	t, err := parseTemplates()
 	if err != nil {
 		return err

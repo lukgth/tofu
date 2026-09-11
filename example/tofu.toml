@@ -8,7 +8,7 @@ footer = "Made with tofu 🧊"
 
 [theme]
   width = "47.5rem"
-  font_main = "\"JetBrains Mono\", ui-monospace, monospace"
+  font_main = "\"Ioskeley Mono\", ui-monospace, monospace"
   font_secondary = "\"Rubik\", system-ui, sans-serif"
   font_scale = "1em"
   background = "#fffdfa"
@@ -36,7 +36,6 @@ footer = "Made with tofu 🧊"
 
 [header]
   title = "My Tofu Site"
-  tagline = "...hi, welcome to my blog"
 
   [[header.nav]]
     label = "Home"

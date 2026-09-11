@@ -44,9 +44,8 @@ type NavItem struct {
 }
 
 type Header struct {
-	Title   string    `toml:"title"`
-	Tagline string    `toml:"tagline"`
-	Nav     []NavItem `toml:"nav"`
+	Title string    `toml:"title"`
+	Nav   []NavItem `toml:"nav"`
 }
 
 type Homepage struct {

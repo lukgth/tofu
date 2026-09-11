@@ -148,54 +148,67 @@ func TestBuildDraftsExcludedUnlessAsked(t *testing.T) {
 	}
 }
 
-func TestTaglineRendering(t *testing.T) {
-	t.Run("renders h2 and squiggle when tagline set", func(t *testing.T) {
-		root := t.TempDir()
-		write := func(rel, content string) {
-			p := filepath.Join(root, rel)
-			os.MkdirAll(filepath.Dir(p), 0o755)
-			if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
-				t.Fatal(err)
-			}
+func TestSiteTitleHeader(t *testing.T) {
+	root := scaffoldSite(t)
+	writePostFile(t, root, "p.md", "title: P\ndate: 2026-01-01\n")
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+
+	idx, err := os.ReadFile(filepath.Join(out, "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(idx)
+	t.Run("index has site title h2 and squiggle", func(t *testing.T) {
+		if !strings.Contains(s, "<h2>Test Site</h2>") {
+			t.Errorf("index missing site title h2; got: %.400s", s)
 		}
-		write("tofu.toml", "title = \"Tagline Test\"\nbase_url = \"https://example.com\"\nrecent_count = 5\nlanguage = \"en\"\ndescription = \"desc\"\nfooter = \"foot\"\n[header]\ntagline = \"hi test\"\n[[header.nav]]\nlabel = \"Home\"\nurl = \"/\"\n[homepage]\nheading = \"Welcome\"\n")
-		os.MkdirAll(filepath.Join(root, "content", "posts"), 0o755)
-		writePostFile(t, root, "p.md", "title: P\ndate: 2026-01-01\n")
-		out := filepath.Join(t.TempDir(), "public")
-		if err := Build(root, out, false); err != nil {
-			t.Fatal(err)
+		if !strings.Contains(s, `class="squiggle"`) {
+			t.Error("index missing squiggle div")
 		}
+	})
+	t.Run("post page has site title h2 too", func(t *testing.T) {
 		html, err := os.ReadFile(filepath.Join(out, "articles", "p.html"))
 		if err != nil {
 			t.Fatal(err)
 		}
-		s := string(html)
-		if !strings.Contains(s, "<h2>hi test</h2>") {
-			t.Error("tagline h2 missing when Tagline set")
-		}
-		if !strings.Contains(s, "squiggle") {
-			t.Error("squiggle divider missing when Tagline set")
+		if !strings.Contains(string(html), "<h2>Test Site</h2>") {
+			t.Error("post page missing site title h2")
 		}
 	})
-	t.Run("omits h2 and squiggle when tagline empty", func(t *testing.T) {
-		root := scaffoldSite(t)
-		writePostFile(t, root, "p.md", "title: P\ndate: 2026-01-01\n")
-		out := filepath.Join(t.TempDir(), "public")
-		if err := Build(root, out, false); err != nil {
-			t.Fatal(err)
-		}
-		html, err := os.ReadFile(filepath.Join(out, "articles", "p.html"))
+	t.Run("style.css time rule is italic without monospace", func(t *testing.T) {
+		css, err := os.ReadFile(filepath.Join(out, "assets-blog", "style.css"))
 		if err != nil {
 			t.Fatal(err)
 		}
-		s := string(html)
-		if strings.Contains(s, "<h2>") {
-			t.Error("tagline h2 must be omitted when Tagline empty")
+		c := string(css)
+		timeRule := timeRuleCSS(c)
+		if !strings.Contains(timeRule, "font-style: italic") {
+			t.Errorf("time rule missing font-style italic; got: %s", timeRule)
 		}
-		if strings.Contains(s, "squiggle") {
-			t.Error("squiggle divider must be omitted when Tagline empty")
+		if strings.Contains(timeRule, "monospace") {
+			t.Error("time rule must not set a monospace font-family")
+		}
+		if !strings.Contains(c, "body.home h1, body.home h2, body.home h3") {
+			t.Error("style.css missing body.home heading override")
 		}
 	})
+}
+
+// timeRuleCSS extracts the top-level `time { ... }` rule body from CSS.
+func timeRuleCSS(css string) string {
+	start := strings.Index(css, "\ntime {")
+	if start < 0 {
+		return ""
+	}
+	rest := css[start+len("\ntime {"):]
+	end := strings.Index(rest, "}")
+	if end < 0 {
+		return ""
+	}
+	return rest[:end]
 }
 
 func TestBuildHomeBodyAndStaticCopy(t *testing.T) {

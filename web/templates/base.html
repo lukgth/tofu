@@ -8,12 +8,12 @@
   <link rel="stylesheet" href="/assets-blog/style.css">
   {{.ExtraHead}}
 </head>
-<body>
+<body{{if .BodyClass}} class="{{.BodyClass}}"{{end}}>
   <header>
     <a class="title" href="/"><h1>{{.SiteTitle}}</h1></a>
     <nav>
-      {{if .Tagline}}<h2>{{.Tagline}}</h2>
-      <div class="squiggle" aria-hidden="true"></div>{{end}}
+      <h2>{{.SiteTitle}}</h2>
+      <div class="squiggle" aria-hidden="true"></div>
       <p>{{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}</p>
     </nav>
   </header>

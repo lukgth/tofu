@@ -30,7 +30,7 @@ func DefaultConfig() config.Site {
 		Footer:      "Made with tofu \U0001F9CA",
 		Theme: config.Theme{
 			Width:          "47.5rem",
-			FontMain:       "\"JetBrains Mono\", ui-monospace, monospace",
+			FontMain:       "\"Ioskeley Mono\", ui-monospace, monospace",
 			FontSecondary:  "\"Rubik\", system-ui, sans-serif",
 			FontScale:      "1em",
 			Background:     "#fffdfa",
@@ -57,8 +57,7 @@ func DefaultConfig() config.Site {
 			DarkCodeBG:     "#2a2547",
 		},
 		Header: config.Header{
-			Title:   "My Tofu Site",
-			Tagline: "...hi, welcome to my blog",
+			Title: "My Tofu Site",
 			Nav: []config.NavItem{
 				{Label: "Home", URL: "/"},
 				{Label: "Blog", URL: "/articles/"},

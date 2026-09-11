@@ -47,17 +47,17 @@
 }
 
 @font-face {
-  font-family: "Rubik";
+  font-family: "Ioskeley Mono";
   font-style: normal;
-  font-weight: 300;
-  src: url("fonts/rubik-light.ttf") format("truetype");
+  font-weight: 400;
+  src: url("fonts/ioskeley-regular.ttf") format("truetype");
 }
 
 @font-face {
-  font-family: "Rubik";
+  font-family: "Ioskeley Mono";
   font-style: normal;
-  font-weight: 500;
-  src: url("fonts/rubik-medium.ttf") format("truetype");
+  font-weight: 700;
+  src: url("fonts/ioskeley-bold.ttf") format("truetype");
 }
 
 @font-face {
@@ -79,7 +79,6 @@ html {
 
 body {
   font-family: "Rubik", sans-serif;
-  font-weight: 500;
   max-width: 47.5rem;
   margin: 2.5rem auto;
   letter-spacing: 0.015em;
@@ -89,10 +88,6 @@ body {
   line-height: 1.6;
   background-color: var(--background-color);
   color: var(--text-color);
-}
-
-main {
-  line-height: 1.6;
 }
 
 p, li {
@@ -135,10 +130,14 @@ strong, b {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: monospace;
+  font-family: var(--font-main);
   color: var(--heading-color);
   line-height: 1.2;
   margin-top: 2.5rem;
+}
+
+body.home h1, body.home h2, body.home h3 {
+  font-family: var(--font-secondary);
 }
 
 h1 {
@@ -179,6 +178,7 @@ nav h2::after {
 }
 
 pre {
+  font-family: var(--font-main);
   font-size: 0.875rem;
   background-color: var(--code-bg);
   border-radius: 10px;
@@ -193,7 +193,7 @@ pre code {
 }
 
 code {
-  font-family: monospace;
+  font-family: var(--font-main);
   padding: 0.15rem 0.4rem;
   border-radius: 10px;
   background-color: var(--code-bg);
@@ -218,7 +218,7 @@ img {
 }
 
 time {
-  font-family: monospace;
+  font-style: italic;
   font-size: 0.875rem;
   padding: 0 0.3125rem;
   border-radius: 3px;
@@ -279,7 +279,7 @@ hr {
 .tag {
   display: inline-block;
   font-size: 0.8rem;
-  font-family: monospace;
+  font-family: var(--font-main);
   padding: 0.1rem 0.6rem;
   margin-right: 0.35rem;
   border-radius: 999px;
