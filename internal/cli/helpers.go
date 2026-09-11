@@ -39,7 +39,7 @@ func DefaultConfig() config.Site {
 			HeaderColor:    "#4c3a63",
 			Accent:         "#c8b3e8",
 			Blink:          "#e4d9f6",
-			CodeBG:         "#efedf2",
+			Highlight:      "#c9a0e8",
 			Link:           "#9d6bb8",
 			Visited:        "#b48cb8",
 			Blockquote:     "#5c4d6b",
@@ -53,6 +53,7 @@ func DefaultConfig() config.Site {
 			DarkAccent:     "#bfa6e8",
 			DarkBlink:      "#b8a0e8",
 			DarkCodeBG:     "#4a3a63",
+			DarkHighlight:  "#c9a0e8",
 		},
 		Header: config.Header{
 			Title: "My Tofu Site",

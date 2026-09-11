@@ -13,10 +13,12 @@
   --secondary: {{.Theme.Secondary}};
   --accent: {{.Theme.Accent}};
   --code-bg: {{.Theme.CodeBG}};
+  --highlight: {{.Theme.Highlight}};
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --highlight: {{.Theme.DarkHighlight}};
     --text-color: {{.Theme.DarkText}};
     --heading-color: {{.Theme.DarkText}};
     --header-color: {{.Theme.DarkHeaderColor}};
@@ -34,6 +36,7 @@
    OS preference). */
 :root.dark {
   --background-color: {{.Theme.DarkBackground}};
+  --highlight: {{.Theme.DarkHighlight}};
   --text-color: {{.Theme.DarkText}};
   --heading-color: {{.Theme.DarkText}};
   --header-color: {{.Theme.DarkHeaderColor}};
@@ -47,6 +50,7 @@
 }
 
 :root.light {
+  --highlight: {{.Theme.Highlight}};
   --text-color: {{.Theme.Text}};
   --heading-color: {{.Theme.Text}};
   --header-color: {{.Theme.HeaderColor}};
@@ -131,9 +135,23 @@ p {
 }
 
 mark {
-  background-color: color-mix(in srgb, var(--accent) 85%, transparent);
+  background-color: var(--highlight);
   border-radius: 4px;
   padding: 0 3px;
+}
+
+:root.dark mark,
+:root.dark mark strong,
+:root.dark mark b {
+  color: #1d1530;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) mark,
+  :root:not(.light) mark strong,
+  :root:not(.light) mark b {
+    color: #1d1530;
+  }
 }
 
 a {
@@ -220,7 +238,6 @@ code {
   font-family: var(--font-main);
   letter-spacing: normal;
   padding: 0.15rem 0.4rem;
-  border-radius: 3px;
   background-color: var(--code-bg);
   font-size: 0.9em;
 }
@@ -230,19 +247,18 @@ time {
   font-size: 0.875rem;
   padding: 0 0.3125rem;
   border-radius: 3px;
-  background-color: color-mix(in srgb, var(--accent) 85%, transparent);
+  background-color: var(--highlight);
+  color: #1d1530;
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.light) time {
     color: #1d1530;
-    background-color: #c9a0e8;
   }
 }
 
 
 :root.dark time {
   color: #1d1530;
-  background-color: #c9a0e8;
 }
 #theme-toggle {
   font-family: var(--font-main);

@@ -21,6 +21,7 @@ type Theme struct {
 	Blink           string `toml:"blink"`
 	CodeBG          string `toml:"code_bg"`
 	HeaderColor     string `toml:"header_color"`
+	Highlight       string `toml:"highlight"`
 	Text            string `toml:"text"`
 	Link            string `toml:"link"`
 	Visited         string `toml:"visited"`
@@ -29,8 +30,9 @@ type Theme struct {
 	DarkPrimary     string `toml:"dark_primary"`
 	DarkSecondary   string `toml:"dark_secondary"`
 	DarkAccent      string `toml:"dark_accent"`
-	DarkBlink       string `toml:"dark_blink"`
 	DarkCodeBG      string `toml:"dark_code_bg"`
+	DarkBlink       string `toml:"dark_blink"`
+	DarkHighlight   string `toml:"dark_highlight"`
 	DarkHeaderColor string `toml:"dark_header_color"`
 	DarkText        string `toml:"dark_text"`
 	DarkLink        string `toml:"dark_link"`

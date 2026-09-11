@@ -12,7 +12,10 @@ import (
 	texttemplate "text/template"
 	"time"
 
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark-highlighting/v2"
 	extension "github.com/yuin/goldmark/extension"
 	rendererhtml "github.com/yuin/goldmark/renderer/html"
 	"tofu/internal/config"
@@ -22,7 +25,15 @@ import (
 )
 
 var md = goldmark.New(
-	goldmark.WithExtensions(extension.GFM, extension.Footnote, extension.Typographer, Highlight),
+	goldmark.WithExtensions(
+		extension.GFM, extension.Footnote, extension.Typographer, Highlight,
+		highlighting.NewHighlighting(
+			highlighting.WithStyle("github"),
+			highlighting.WithFormatOptions(
+				chromahtml.WithClasses(true),
+			),
+		),
+	),
 	goldmark.WithRendererOptions(rendererhtml.WithUnsafe()),
 )
 
@@ -192,7 +203,74 @@ func renderCSS(cfg config.Site) ([]byte, error) {
 	if err := t.Execute(&buf, cfg); err != nil {
 		return nil, err
 	}
+	if err := writeChromaCSS(&buf); err != nil {
+		return nil, err
+	}
 	return buf.Bytes(), nil
+}
+
+// writeChromaCSS appends Chroma's class-based styles: the github (light)
+// palette as-is, and the github-dark palette scoped to dark mode so code
+// highlighting follows the theme toggle.
+func writeChromaCSS(buf *bytes.Buffer) error {
+	formatter := chromahtml.New(chromahtml.WithClasses(true))
+	var lightBuf bytes.Buffer
+	if err := formatter.WriteCSS(&lightBuf, styles.Get("github")); err != nil {
+		return err
+	}
+	buf.WriteString(cleanChromaCSS(lightBuf.String(), ""))
+	var darkBuf bytes.Buffer
+	if err := formatter.WriteCSS(&darkBuf, styles.Get("github-dark")); err != nil {
+		return err
+	}
+	dark := cleanChromaCSS(darkBuf.String(), "html.dark ")
+	buf.WriteString("@media (prefers-color-scheme: dark) {\n")
+	buf.WriteString(strings.ReplaceAll(dark, "html.dark ", "html:not(.light) "))
+	buf.WriteString("}\n")
+	buf.WriteString(dark)
+	return nil
+}
+
+// cleanChromaCSS normalizes a Chroma WriteCSS sheet: it strips the inline
+// `/* Name */ ` comments, prefixes every selector with prefix, and drops
+// the hardcoded background rules (.bg, .chroma) so the site's --code-bg
+// owns the code block background in every theme.
+func cleanChromaCSS(css, prefix string) string {
+	var b strings.Builder
+	for _, line := range strings.Split(css, "\n") {
+		trimmed := strings.TrimSpace(line)
+		// strip a leading `/* Name */ ` comment
+		if strings.HasPrefix(trimmed, "/*") {
+			if i := strings.Index(trimmed, "*/"); i >= 0 {
+				trimmed = strings.TrimSpace(trimmed[i+2:])
+			} else {
+				continue
+			}
+		}
+		if trimmed == "" {
+			continue
+		}
+		// one-liner rule: `selector { props }`
+		open := strings.Index(trimmed, "{")
+		if open < 0 {
+			continue
+		}
+		sel := strings.TrimSpace(trimmed[:open])
+		props := strings.TrimSpace(trimmed[open+1:])
+		props = strings.TrimSuffix(props, "}")
+		// drop hardcoded backgrounds; the site's --code-bg owns them
+		if sel == ".bg" {
+			continue
+		}
+		props = strings.ReplaceAll(props, "background-color: #ffffff;", "")
+		props = strings.ReplaceAll(props, "background-color: #000000;", "")
+		parts := strings.Split(sel, ",")
+		for j := range parts {
+			parts[j] = prefix + strings.TrimSpace(parts[j])
+		}
+		b.WriteString(strings.Join(parts, ", ") + " { " + strings.TrimSpace(props) + " }\n")
+	}
+	return b.String()
 }
 
 func copyCustomCSS(siteRoot, outDir string) error {
