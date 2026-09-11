@@ -9,6 +9,11 @@
   --link-color: {{.Theme.Link}};
   --visited-color: {{.Theme.Visited}};
   --blockquote-color: {{.Theme.Blockquote}};
+  --surface-color: color-mix(in srgb, var(--link-color) 7%, var(--background-color));
+  --accent-color: color-mix(in srgb, var(--link-color) 45%, var(--background-color));
+  --code-bg: color-mix(in srgb, var(--link-color) 10%, var(--background-color));
+  --border-radius: 10px;
+  --transition-duration: 0.3s;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -25,34 +30,49 @@
 body {
   font-family: var(--font-secondary);
   font-size: var(--font-scale);
-  margin: auto;
-  padding: 20px;
+  margin: 2.5rem auto;
+  padding: 0 1.25rem;
   max-width: var(--width);
   text-align: left;
   background-color: var(--background-color);
+  color: var(--text-color);
   word-wrap: break-word;
   overflow-wrap: break-word;
-  line-height: 1.5;
-  color: var(--text-color);
+  line-height: 1.6;
+  letter-spacing: 0.015em;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-main);
   color: var(--heading-color);
+  line-height: 1.2;
+  margin-top: 2.5rem;
+}
+
+h1 { font-size: 1.9em; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.2em; }
+
+p {
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
 }
 
 a {
   color: var(--link-color);
   cursor: pointer;
   text-decoration: none;
+  transition: transform var(--transition-duration) ease;
 }
 
 a:hover {
   text-decoration: underline;
+  transform: translateY(-1.5px);
 }
 
 nav a {
   margin-right: 8px;
+  display: inline-block;
 }
 
 strong, b {
@@ -60,9 +80,12 @@ strong, b {
 }
 
 time {
-  font-family: monospace;
+  font-family: var(--font-main);
   font-style: normal;
-  font-size: 15px;
+  font-size: 0.875rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 3px;
+  background-color: var(--accent-color);
 }
 
 main {
@@ -71,27 +94,57 @@ main {
 
 table {
   width: 100%;
+  border-collapse: collapse;
+}
+
+td, th {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--accent-color);
+  text-align: left;
+  vertical-align: top;
 }
 
 hr {
   border: 0;
-  border-top: 1px dashed;
+  border-top: 1px dashed var(--accent-color);
 }
 
 img {
   max-width: 100%;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 15px;
 }
 
 code {
   font-family: monospace;
-  padding: 2px;
-  border-radius: 3px;
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--border-radius);
+  background-color: var(--code-bg);
+  font-size: 0.9em;
+}
+
+pre {
+  font-size: 0.875rem;
+  background-color: var(--code-bg);
+  border-radius: var(--border-radius);
+  padding: 1.25rem;
+  overflow-x: auto;
+  text-wrap: wrap;
+}
+
+pre code {
+  padding: unset;
+  background: unset;
 }
 
 blockquote {
-  border-left: 1px solid #999;
+  margin: 1.2em 0;
+  padding: 0.2rem 1.5rem;
+  border-left: 0.25rem solid var(--link-color);
+  background: var(--surface-color);
+  border-radius: var(--border-radius);
   color: var(--blockquote-color);
-  padding-left: 20px;
   font-style: italic;
 }
 
@@ -100,12 +153,37 @@ footer {
   text-align: center;
 }
 
-.title:hover {
+.title {
+  margin-bottom: 0.5rem;
+}
+
+.title a {
+  color: var(--heading-color);
   text-decoration: none;
+}
+
+.title a:hover {
+  text-decoration: none;
+  transform: translateY(-1.5px);
 }
 
 .title h1 {
   font-size: 1.5em;
+}
+
+.tags {
+  margin: 0.5rem 0 1.5rem;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-family: var(--font-main);
+  padding: 0.1rem 0.6rem;
+  margin-right: 0.35rem;
+  border-radius: 999px;
+  background-color: var(--surface-color);
+  color: var(--link-color);
 }
 
 .inline {
@@ -120,10 +198,13 @@ ul.blog-posts {
 
 ul.blog-posts li {
   display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
 }
 
 ul.blog-posts li span {
-  flex: 0 0 130px;
+  flex: 0 0 auto;
 }
 
 ul.blog-posts li a:visited {
