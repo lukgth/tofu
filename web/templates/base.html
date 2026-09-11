@@ -5,8 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{{.Description}}">
   <title>{{.Title}} — {{.SiteTitle}}</title>
+  <script>
+    (function () {
+      var t = localStorage.getItem("theme");
+      if (t === "dark" || t === "light") {
+        document.documentElement.classList.add(t);
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="/assets-blog/style.css">
-  {{.ExtraHead}}
 </head>
 <body{{if .BodyClass}} class="{{.BodyClass}}"{{end}}>
   <header>
@@ -14,12 +21,33 @@
     <nav>
       <h2>{{.SiteTitle}}</h2>
       <div class="squiggle" aria-hidden="true"></div>
-      <p>{{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}</p>
+      <p>{{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}<button id="theme-toggle" aria-label="toggle dark mode"></button></p>
     </nav>
   </header>
   <main>
     {{.Content}}
   </main>
   <footer>{{.Footer}}</footer>
+  <script>
+    (function () {
+      var btn = document.getElementById("theme-toggle");
+      var root = document.documentElement;
+      function paint() {
+        var dark = root.classList.contains("dark") ||
+          (!root.classList.contains("light") &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        btn.textContent = dark ? "light" : "dark";
+      }
+      btn.addEventListener("click", function () {
+        var next = root.classList.contains("dark") ? "light" : "dark";
+        root.classList.remove("light", "dark");
+        root.classList.add(next);
+        localStorage.setItem("theme", next);
+        paint();
+      });
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paint);
+      paint();
+    })();
+  </script>
 </body>
 </html>

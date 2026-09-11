@@ -1,5 +1,5 @@
 {{.HomeHTML}}
-<h2>Recent posts</h2>
+<h1>recent posts</h1>
 {{if .Posts}}<ul class="blog-posts">
   {{range .Posts}}<li><span><time datetime="{{.DateISO}}">{{.DatePretty}}</time></span><a href="/articles/{{.Slug}}.html">{{.Title}}</a></li>
   {{end}}</ul>

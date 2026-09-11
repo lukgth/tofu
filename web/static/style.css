@@ -29,6 +29,32 @@
   }
 }
 
+/* Manual theme override: class on <html> set by the toggle (wins over the
+   OS preference). */
+:root.dark {
+  --background-color: {{.Theme.DarkBackground}};
+  --heading-color: {{.Theme.DarkText}};
+  --header-color: {{.Theme.DarkHeaderColor}};
+  --visited-color: {{.Theme.DarkVisited}};
+  --blockquote-color: {{.Theme.DarkBlockquote}};
+  --primary: {{.Theme.DarkPrimary}};
+  --secondary: {{.Theme.DarkSecondary}};
+  --accent: {{.Theme.DarkAccent}};
+  --code-bg: {{.Theme.DarkCodeBG}};
+}
+
+:root.light {
+  --background-color: {{.Theme.Background}};
+  --heading-color: {{.Theme.Text}};
+  --header-color: {{.Theme.HeaderColor}};
+  --visited-color: {{.Theme.Visited}};
+  --blockquote-color: {{.Theme.Blockquote}};
+  --primary: {{.Theme.Primary}};
+  --secondary: {{.Theme.Secondary}};
+  --accent: {{.Theme.Accent}};
+  --code-bg: {{.Theme.CodeBG}};
+}
+
 @font-face {
   font-family: "Rubik";
   font-style: normal;
@@ -194,15 +220,24 @@ code {
   background-color: var(--code-bg);
   font-size: 0.9em;
 }
-
-blockquote {
-  margin: 1.2em 0;
-  padding: 0.2rem 1.5rem;
-  border-left: 0.25rem solid var(--accent);
-  background: var(--secondary);
-  border-radius: 10px;
-  color: var(--blockquote-color);
+time {
+  font-family: var(--font-secondary);
   font-style: italic;
+  font-size: 0.875rem;
+  padding: 0 0.3125rem;
+  border-radius: 3px;
+  background-color: var(--primary);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) time {
+    color: black;
+    background-color: var(--primary);
+  }
+}
+
+:root.dark time {
+  color: black;
+  background-color: var(--primary);
 }
 
 img {
@@ -218,6 +253,17 @@ time {
   padding: 0 0.3125rem;
   border-radius: 3px;
   background-color: var(--primary);
+}
+#theme-toggle {
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  background: var(--primary);
+  color: var(--text-color);
+  border: unset;
+  border-radius: 3px;
+  padding: 0 0.3125rem;
+  cursor: pointer;
+  margin-left: 8px;
 }
 
 @media (prefers-color-scheme: dark) {
