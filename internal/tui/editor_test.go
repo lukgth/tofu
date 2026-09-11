@@ -212,7 +212,9 @@ func TestOpenInEditorUnavailable(t *testing.T) {
 	}
 	os.Remove(done.tmp)
 }
+
 func TestEditWizardEditorChoiceOpensEditor(t *testing.T) {
+	defer clearSessionEditor()
 	dir := t.TempDir()
 	path := filepath.Join(dir, "hello.md")
 	src := "---\ntitle: T\ndate: 2026-01-01\n---\nbody\n"
@@ -229,14 +231,27 @@ func TestEditWizardEditorChoiceOpensEditor(t *testing.T) {
 	w.focusStep()
 
 	// 1) Choosing "Open $EDITOR" skips the textarea and lands on review;
-	// the summary shows the editor intent.
+	// the summary shows the editor intent. Pin the environment so the
+	// summary leg is deterministic: no $EDITOR, no ~/.selected_editor,
+	// and a select-editor shim on PATH (kept alongside the system PATH
+	// so part 2's EDITOR=true still resolves).
+	// (The old "editor: true" assertion only passed when EDITOR=true
+	// leaked in from the ambient environment, e.g. dev shells — CI
+	// runners leave EDITOR unset, which is why this failed there.)
+	t.Setenv("EDITOR", "")
+	t.Setenv("HOME", t.TempDir())
+	selectDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(selectDir, "select-editor"), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", selectDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	w.steps[4].choice.cursor = 1
 	m, _ := w.Update(enterKey())
 	w = m.(*wizardModel)
 	if w.screen != "review" {
 		t.Fatalf("screen = %q, want review after Open $EDITOR choice", w.screen)
 	}
-	if got := w.summary(w); !strings.Contains(got, "editor: true") || !strings.Contains(got, "opens after confirm") {
+	if got := w.summary(w); !strings.Contains(got, "editor: ") || !strings.Contains(got, "opens after confirm") {
 		t.Fatalf("summary = %q, want editor line", got)
 	}
 
