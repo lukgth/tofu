@@ -5,10 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"charm.land/bubbles/v2/table"
-	"charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
@@ -17,7 +17,8 @@ import (
 )
 
 // RunEdit picks a post and edits it interactively.
-// slug empty -> table picker first.
+// slug empty -> table picker first; "b" on the picker switches to browsing
+// content/ with the file picker (any .md, not just posts).
 func RunEdit(root, slug string, opts Options) error {
 	o := normalize(opts)
 	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
@@ -26,21 +27,29 @@ func RunEdit(root, slug string, opts Options) error {
 	if err != nil {
 		return err
 	}
-	if slug == "" {
-		if len(posts) == 0 {
-			return fmt.Errorf("no posts to edit; try `tofu new`")
-		}
+	for {
 		m := newEditPicker(posts, isDark, o)
 		p := tea.NewProgram(m)
 		model, err := p.Run()
 		if err != nil {
 			return err
 		}
-		picked := model.(editPickerModel).picked
-		if picked == "" {
+		picker := model.(editPickerModel)
+		if picker.browse {
+			path, err := runFileBrowser(root, o, isDark)
+			if err != nil {
+				return err
+			}
+			if path == "" {
+				continue // back to the table picker
+			}
+			return runEditForm(root, path, o, isDark)
+		}
+		if picker.picked == "" {
 			return nil
 		}
-		slug = picked
+		slug = picker.picked
+		break
 	}
 
 	path, err := postPathForSlug(root, slug)
@@ -48,6 +57,199 @@ func RunEdit(root, slug string, opts Options) error {
 		return err
 	}
 	return runEditForm(root, path, o, isDark)
+}
+
+// fileBrowserModel is tofu's own directory browser: name | date | size
+// rows over the bubbles table (no permissions column), directories first.
+type fileBrowserModel struct {
+	table     table.Model
+	dir       string
+	root      string
+	entries   []os.DirEntry
+	opts      Options
+	picked    string
+	cancelled bool
+	slide     Slide
+	spring    spring
+}
+
+func runFileBrowser(root string, o Options, isDark bool) (string, error) {
+	b, err := newFileBrowser(filepath.Join(root, "content"), o)
+	if err != nil {
+		return "", err
+	}
+	p := tea.NewProgram(b)
+	model, err := p.Run()
+	if err != nil {
+		return "", err
+	}
+	out := model.(*fileBrowserModel)
+	if out.cancelled || out.picked == "" {
+		return "", nil
+	}
+	return out.picked, nil
+}
+
+func newFileBrowser(start string, o Options) (*fileBrowserModel, error) {
+	abs, err := filepath.Abs(start)
+	if err != nil {
+		return nil, err
+	}
+	b := &fileBrowserModel{
+		dir:    abs,
+		root:   abs,
+		opts:   o,
+		spring: NewSlideSpring(),
+		slide:  NewSlide(8),
+	}
+	t := table.New(
+		table.WithColumns([]table.Column{
+			{Title: "name", Width: 30},
+			{Title: "date", Width: 12},
+			{Title: "size", Width: 8},
+		}),
+		table.WithFocused(true),
+		table.WithHeight(16),
+	)
+	t.SetStyles(tableStyles())
+	b.table = t
+	if err := b.load(); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+// load (re)reads the current directory into the table, dirs first.
+func (m *fileBrowserModel) load() error {
+	entries, err := os.ReadDir(m.dir)
+	if err != nil {
+		return err
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		di, dj := entries[i].IsDir(), entries[j].IsDir()
+		if di != dj {
+			return di // directories first
+		}
+		return entries[i].Name() < entries[j].Name()
+	})
+	m.entries = entries
+	rows := make([]table.Row, 0, len(entries))
+	for _, e := range entries {
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		name := e.Name()
+		if e.IsDir() {
+			name += "/"
+		}
+		date := info.ModTime().Format("2006-01-02")
+		size := "-"
+		if !e.IsDir() {
+			size = humanizeSize(info.Size())
+		}
+		rows = append(rows, table.Row{name, date, size})
+	}
+	m.table.SetRows(rows)
+	m.table.SetCursor(0)
+	m.table.SetWidth(m.opts.Width)
+	m.table.SetHeight(16)
+	return nil
+}
+
+func humanizeSize(n int64) string {
+	switch {
+	case n >= 1<<20:
+		return fmt.Sprintf("%.1fM", float64(n)/(1<<20))
+	case n >= 1<<10:
+		return fmt.Sprintf("%.1fK", float64(n)/(1<<10))
+	default:
+		return fmt.Sprintf("%dB", n)
+	}
+}
+
+func (m *fileBrowserModel) Init() tea.Cmd {
+	return tea.Batch(SlideCmd(m.slide, m.opts.NoAnimations))
+}
+
+func (m *fileBrowserModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.table.SetWidth(msg.Width)
+		m.table.SetHeight(min(24, msg.Height-6))
+		return m, nil
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button == tea.MouseLeft {
+			if row := msg.Mouse().Y - 3; row >= 0 && row < len(m.entries) {
+				m.table.SetCursor(row)
+			}
+		}
+		return m, nil
+	case frameMsg:
+		var cmd tea.Cmd
+		if m.slide.Update(m.spring) {
+			cmd = FrameTick()
+		}
+		return m, cmd
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "ctrl+c", "esc":
+			m.cancelled = true
+			return m, tea.Quit
+		case "enter":
+			i := m.table.Cursor()
+			if i < 0 || i >= len(m.entries) {
+				return m, nil
+			}
+			e := m.entries[i]
+			if e.IsDir() {
+				next := filepath.Join(m.dir, e.Name())
+				if abs, err := filepath.Abs(next); err == nil {
+					m.dir = abs
+					if err := m.load(); err != nil {
+						return m, nil
+					}
+				}
+				return m, nil
+			}
+			if strings.HasSuffix(e.Name(), ".md") {
+				m.picked = filepath.Join(m.dir, e.Name())
+				return m, tea.Quit
+			}
+			return m, nil
+		case "backspace", "h":
+			up := filepath.Dir(m.dir)
+			if up != m.dir && len(up) >= len(m.root) {
+				m.dir = up
+				if err := m.load(); err != nil {
+					return m, nil
+				}
+			}
+			return m, nil
+		}
+	}
+	var cmd tea.Cmd
+	m.table, cmd = m.table.Update(msg)
+	return m, cmd
+}
+
+func (m *fileBrowserModel) View() tea.View {
+	v := tea.NewView(lipgloss.JoinVertical(
+		lipgloss.Left,
+		AnimatedTitle(m.slide.X, "tofu edit — browse "+m.relDir()),
+		m.table.View(),
+		HelpStyle.Render("enter open • backspace up • esc quit"),
+	))
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
+}
+
+// relDir renders the current directory relative to the site root for the title.
+func (m *fileBrowserModel) relDir() string {
+	if i := strings.Index(m.dir, "content"); i >= 0 {
+		return m.dir[i:]
+	}
+	return m.dir
 }
 
 func postPathForSlug(root, slug string) (string, error) {
@@ -69,6 +271,7 @@ type editPickerModel struct {
 	opts   Options
 	picked string
 	done   bool
+	browse bool
 	slide  Slide
 	spring spring
 }
@@ -133,6 +336,10 @@ func (m editPickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
+		case "ctrl+b":
+			m.browse = true
+			m.done = true
+			return m, tea.Quit
 		case "enter":
 			if row := m.table.SelectedRow(); row != nil && len(row) > 1 {
 				m.picked = row[1]
@@ -155,7 +362,7 @@ func (m editPickerModel) View() tea.View {
 		lipgloss.Left,
 		AnimatedTitle(m.slide.X, "tofu edit"),
 		m.table.View(),
-		HelpFooter(m.opts),
+		HelpStyle.Render("enter select • ctrl+b browse files • esc quit"),
 	))
 	v.MouseMode = tea.MouseModeCellMotion
 	return v
@@ -181,11 +388,7 @@ func runEditForm(root, path string, o Options, isDark bool) error {
 	dateIn := newTextInput("YYYY-MM-DD", p.Frontmatter.Date, o)
 	tagsIn := newTextInput("a,b,c", strings.Join(p.Frontmatter.Tags, ","), o)
 	descIn := newTextInput("description", p.Frontmatter.Description, o)
-	body := textarea.New()
-	body.SetStyles(textareaStyles())
-	body.SetValue(p.BodyMarkdown)
-	body.SetHeight(8)
-	body.SetWidth(o.Width - 4)
+	body := newBodyArea(p.BodyMarkdown, o)
 	editorChoice := newChoice([]string{"Quick edit (textarea)", "Open $EDITOR"}, isDark, o.Width)
 
 	fm := p.Frontmatter

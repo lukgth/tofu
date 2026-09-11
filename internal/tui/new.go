@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/key"
-	"charm.land/bubbles/v2/textarea"
 	"charm.land/lipgloss/v2"
 
 	"tofu/internal/cli"
@@ -24,11 +23,8 @@ func RunNew(root string, opts Options) error {
 	tagsIn := newTextInput("intro, tips (comma separated)", "", o)
 	descIn := newTextInput("one line description", "", o)
 	slugIn := newTextInput("my-cute-post", "", o)
-	body := textarea.New()
-	body.SetStyles(textareaStyles())
+	body := newBodyArea("", o)
 	body.Placeholder = "empty = starter template"
-	body.SetHeight(8)
-	body.SetWidth(o.Width - 4)
 
 	in := cli.NewPostInput{Title: "Untitled"}
 	draft := false

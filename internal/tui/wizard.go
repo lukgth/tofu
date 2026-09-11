@@ -6,6 +6,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"strings"
 )
 
 type stepKind int
@@ -48,6 +49,27 @@ func newTextInput(placeholder, def string, o Options) textinput.Model {
 	}
 	ti.SetWidth(o.Width - 4)
 	return ti
+}
+
+// newBodyArea builds the shared body textarea for the post wizards: tall
+// enough to invite writing, grows with content up to the terminal, no line
+// numbers (they duplicate the feel of a text editor, not a writing tool).
+func newBodyArea(value string, o Options) textarea.Model {
+	ta := textarea.New()
+	ta.SetStyles(textareaStyles())
+	ta.SetValue(value)
+	ta.ShowLineNumbers = false
+	height := 14
+	if n := strings.Count(value, "\n") + 3; n > height {
+		height = n
+	}
+	if height > 30 {
+		height = 30
+	}
+	ta.SetHeight(maxInt(8, height))
+	ta.SetWidth(o.Width - 4)
+	ta.MaxHeight = 400
+	return ta
 }
 
 func newFilePicker(o Options) filepicker.Model {
