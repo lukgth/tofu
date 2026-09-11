@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/lukgth/tofu/internal/config"
 	"github.com/lukgth/tofu/internal/post"
 	"github.com/lukgth/tofu/internal/render"
+	"github.com/spf13/cobra"
 )
 
 // NewRoot builds the tofu command tree.
