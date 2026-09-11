@@ -59,6 +59,13 @@ func TestBuildGoldenIndex(t *testing.T) {
 	if !strings.Contains(s, "06 Jan, 2026") {
 		t.Errorf("date format 02 Jan, 2006 missing; got: %.300s", s)
 	}
+	post, err := os.ReadFile(filepath.Join(out, "articles", "p6.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(post), "<i><time") {
+		t.Error("post page missing <i><time> italic date wrapper")
+	}
 }
 
 func TestBuildOutputTree(t *testing.T) {
@@ -79,6 +86,15 @@ func TestBuildOutputTree(t *testing.T) {
 	css, _ := os.ReadFile(filepath.Join(out, "assets-blog", "style.css"))
 	if !strings.Contains(string(css), "--width") || !strings.Contains(string(css), "prefers-color-scheme") {
 		t.Error("style.css missing theme vars or dark media query")
+	}
+	if !strings.Contains(string(css), "@font-face") || !strings.Contains(string(css), "Rubik") {
+		t.Error("style.css missing @font-face Rubik")
+	}
+	if !strings.Contains(string(css), ".title h1") || !strings.Contains(string(css), "display: none") {
+		t.Error("style.css missing .title h1 display:none")
+	}
+	if !strings.Contains(string(css), "cursor-blink") {
+		t.Error("style.css missing cursor-blink keyframes")
 	}
 }
 
@@ -130,6 +146,56 @@ func TestBuildDraftsExcludedUnlessAsked(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(out, "articles", "d.html")); err != nil {
 		t.Error("draft must be included with includeDrafts")
 	}
+}
+
+func TestTaglineRendering(t *testing.T) {
+	t.Run("renders h2 and squiggle when tagline set", func(t *testing.T) {
+		root := t.TempDir()
+		write := func(rel, content string) {
+			p := filepath.Join(root, rel)
+			os.MkdirAll(filepath.Dir(p), 0o755)
+			if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		write("tofu.toml", "title = \"Tagline Test\"\nbase_url = \"https://example.com\"\nrecent_count = 5\nlanguage = \"en\"\ndescription = \"desc\"\nfooter = \"foot\"\n[header]\ntagline = \"hi test\"\n[[header.nav]]\nlabel = \"Home\"\nurl = \"/\"\n[homepage]\nheading = \"Welcome\"\n")
+		os.MkdirAll(filepath.Join(root, "content", "posts"), 0o755)
+		writePostFile(t, root, "p.md", "title: P\ndate: 2026-01-01\n")
+		out := filepath.Join(t.TempDir(), "public")
+		if err := Build(root, out, false); err != nil {
+			t.Fatal(err)
+		}
+		html, err := os.ReadFile(filepath.Join(out, "articles", "p.html"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := string(html)
+		if !strings.Contains(s, "<h2>hi test</h2>") {
+			t.Error("tagline h2 missing when Tagline set")
+		}
+		if !strings.Contains(s, "squiggle") {
+			t.Error("squiggle divider missing when Tagline set")
+		}
+	})
+	t.Run("omits h2 and squiggle when tagline empty", func(t *testing.T) {
+		root := scaffoldSite(t)
+		writePostFile(t, root, "p.md", "title: P\ndate: 2026-01-01\n")
+		out := filepath.Join(t.TempDir(), "public")
+		if err := Build(root, out, false); err != nil {
+			t.Fatal(err)
+		}
+		html, err := os.ReadFile(filepath.Join(out, "articles", "p.html"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := string(html)
+		if strings.Contains(s, "<h2>") {
+			t.Error("tagline h2 must be omitted when Tagline empty")
+		}
+		if strings.Contains(s, "squiggle") {
+			t.Error("squiggle divider must be omitted when Tagline empty")
+		}
+	})
 }
 
 func TestBuildHomeBodyAndStaticCopy(t *testing.T) {

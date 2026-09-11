@@ -42,6 +42,7 @@ type renderCtx struct {
 	Nav         []navLink
 	Content     template.HTML
 	Footer      string
+	Tagline     string
 }
 
 type navLink struct {
@@ -100,6 +101,9 @@ func Build(siteRoot, outDir string, includeDrafts bool) error {
 	if err := write(filepath.Join(outDir, "assets-blog", "style.css"), styles); err != nil {
 		return err
 	}
+	if err := copyFonts(outDir); err != nil {
+		return err
+	}
 	if err := copyCustomCSS(siteRoot, outDir); err != nil {
 		return err
 	}
@@ -136,6 +140,7 @@ func baseCtx(cfg config.Site) renderCtx {
 		Description: cfg.Description,
 		Nav:         nav,
 		Footer:      cfg.Footer,
+		Tagline:     cfg.Header.Tagline,
 	}
 }
 
@@ -154,7 +159,7 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 		Lang, Title, SiteTitle, Description, ExtraHead string
 		Nav                                            []navLink
 		Content                                        template.HTML
-		Footer                                         string
+		Footer, Tagline                                string
 	}{
 		Lang:        ctx.Lang,
 		Title:       ctx.Title,
@@ -164,6 +169,7 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 		Nav:         ctx.Nav,
 		Content:     template.HTML(content.String()),
 		Footer:      ctx.Footer,
+		Tagline:     ctx.Tagline,
 	}
 	var out bytes.Buffer
 	if err := t.ExecuteTemplate(&out, "base.html", full); err != nil {

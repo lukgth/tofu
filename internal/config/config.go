@@ -15,12 +15,22 @@ type Theme struct {
 	FontSecondary  string `toml:"font_secondary"`
 	FontScale      string `toml:"font_scale"`
 	Background     string `toml:"background"`
+	Primary        string `toml:"primary"`
+	Secondary      string `toml:"secondary"`
+	Accent         string `toml:"accent"`
+	Blink          string `toml:"blink"`
+	CodeBG         string `toml:"code_bg"`
 	Heading        string `toml:"heading"`
 	Text           string `toml:"text"`
 	Link           string `toml:"link"`
 	Visited        string `toml:"visited"`
 	Blockquote     string `toml:"blockquote"`
 	DarkBackground string `toml:"dark_background"`
+	DarkPrimary    string `toml:"dark_primary"`
+	DarkSecondary  string `toml:"dark_secondary"`
+	DarkAccent     string `toml:"dark_accent"`
+	DarkBlink      string `toml:"dark_blink"`
+	DarkCodeBG     string `toml:"dark_code_bg"`
 	DarkHeading    string `toml:"dark_heading"`
 	DarkText       string `toml:"dark_text"`
 	DarkLink       string `toml:"dark_link"`
@@ -34,8 +44,9 @@ type NavItem struct {
 }
 
 type Header struct {
-	Title string    `toml:"title"`
-	Nav   []NavItem `toml:"nav"`
+	Title   string    `toml:"title"`
+	Tagline string    `toml:"tagline"`
+	Nav     []NavItem `toml:"nav"`
 }
 
 type Homepage struct {

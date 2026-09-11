@@ -10,11 +10,11 @@
 </head>
 <body>
   <header>
-    <div class="title">
-      <a href="/">{{.SiteTitle}}</a>
-    </div>
+    <a class="title" href="/"><h1>{{.SiteTitle}}</h1></a>
     <nav>
-      {{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}
+      {{if .Tagline}}<h2>{{.Tagline}}</h2>
+      <div class="squiggle" aria-hidden="true"></div>{{end}}
+      <p>{{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}</p>
     </nav>
   </header>
   <main>
