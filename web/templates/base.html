@@ -36,7 +36,7 @@
         var dark = root.classList.contains("dark") ||
           (!root.classList.contains("light") &&
             window.matchMedia("(prefers-color-scheme: dark)").matches);
-        btn.textContent = dark ? "light" : "dark";
+        btn.textContent = dark ? "☀" : "☾";
       }
       btn.addEventListener("click", function () {
         var next = root.classList.contains("dark") ? "light" : "dark";

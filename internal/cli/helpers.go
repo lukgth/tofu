@@ -44,7 +44,7 @@ func DefaultConfig() config.Site {
 			Visited:        "#b48cb8",
 			Blockquote:     "#5c4d6b",
 			DarkBackground: "#1b1530",
-			DarkText:       "#d8d0e8",
+			DarkText:       "#e5d9de",
 			DarkLink:       "#c084fc",
 			DarkVisited:    "#a78bca",
 			DarkBlockquote: "#c4b5e0",
