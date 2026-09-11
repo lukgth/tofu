@@ -64,7 +64,7 @@ func newInitCmd() *cobra.Command {
 			for _, rel := range created {
 				fmt.Println("created", rel)
 			}
-			fmt.Println("cute! now try `tofu new`")
+			fmt.Println("done! try `tofu new` to write a post")
 			return nil
 		},
 	}

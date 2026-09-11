@@ -27,7 +27,7 @@ created tofu.toml
 created content/home.md
 created assets-blog/custom.css
 created content/posts/hello-tofu.md
-cute! now try `tofu new`
+done! try `tofu new` to write a post
 
 $ tofu new --title "Hello World" --slug hello-world
 created content/posts/hello-world.md
