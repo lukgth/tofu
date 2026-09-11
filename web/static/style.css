@@ -4,8 +4,8 @@
   --font-secondary: {{.Theme.FontSecondary}};
   --font-scale: {{.Theme.FontScale}};
   --background-color: {{.Theme.Background}};
-  --heading-color: {{.Theme.Heading}};
-  --text-color: {{.Theme.Text}};
+  --heading-color: {{.Theme.Text}};
+  --header-color: {{.Theme.HeaderColor}};
   --link-color: {{.Theme.Link}};
   --visited-color: {{.Theme.Visited}};
   --blockquote-color: {{.Theme.Blockquote}};
@@ -18,9 +18,8 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background-color: {{.Theme.DarkBackground}};
-    --heading-color: {{.Theme.DarkHeading}};
-    --text-color: {{.Theme.DarkText}};
-    --link-color: {{.Theme.DarkLink}};
+    --heading-color: {{.Theme.DarkText}};
+    --header-color: {{.Theme.DarkHeaderColor}};
     --visited-color: {{.Theme.DarkVisited}};
     --blockquote-color: {{.Theme.DarkBlockquote}};
     --primary: {{.Theme.DarkPrimary}};
@@ -136,6 +135,7 @@ h1, h2, h3, h4, h5, h6 {
 
 nav h2 {
   font-family: var(--font-secondary);
+  color: var(--header-color);
 }
 
 body.home h1, body.home h2, body.home h3 {
@@ -269,14 +269,8 @@ hr {
 }
 
 .tag {
-  display: inline-block;
-  font-size: 0.7rem;
   font-family: var(--font-main);
-  padding: 0.05rem 0.45rem;
-  margin-right: 0.3rem;
-  border-radius: 3px;
-  background-color: var(--primary);
-  color: var(--link-color);
+  font-size: 0.8rem;
 }
 
 .inline {

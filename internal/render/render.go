@@ -118,6 +118,9 @@ func Build(siteRoot, outDir string, includeDrafts bool) error {
 	if err := writePostsList(s, base, outDir); err != nil {
 		return err
 	}
+	if err := writeTagPages(s, base, outDir); err != nil {
+		return err
+	}
 	for i := range s.Posts {
 		if err := writePost(s.Posts[i], base, outDir); err != nil {
 			return err
@@ -283,8 +286,47 @@ func writePostsList(s site.Site, base renderCtx, outDir string) error {
 	if err != nil {
 		return err
 	}
-	data := struct{ Posts []entry }{Posts: entries(s.Posts)}
+	data := struct {
+		Heading string
+		Posts   []entry
+	}{"Posts", entries(s.Posts)}
 	return page(t, "posts.html", data, ctx, filepath.Join(outDir, "articles", "index.html"))
+}
+
+// writeTagPages emits articles/tag/<tag>.html listing every post with that
+// tag; the post footer's tag links point here.
+func writeTagPages(s site.Site, base renderCtx, outDir string) error {
+	if len(s.Posts) == 0 {
+		return nil
+	}
+	t, err := parseTemplates()
+	if err != nil {
+		return err
+	}
+	byTag := map[string][]entry{}
+	for _, p := range s.Posts {
+		for _, tag := range p.Frontmatter.Tags {
+			byTag[tag] = append(byTag[tag], entry{
+				DateISO:    p.Date.Format("2006-01-02"),
+				DatePretty: p.Date.Format("02 Jan, 2006"),
+				Slug:       p.Slug,
+				Title:      p.Frontmatter.Title,
+			})
+		}
+	}
+	for tag, posts := range byTag {
+		ctx := base
+		ctx.Title = "posts tagged " + tag
+		data := struct {
+			Heading string
+			Posts   []entry
+		}{"posts tagged “" + tag + "”", posts}
+		dest := filepath.Join(outDir, "articles", "tag", tag+".html")
+		if err := page(t, "posts.html", data, ctx, dest); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func writePost(p post.Post, base renderCtx, outDir string) error {
