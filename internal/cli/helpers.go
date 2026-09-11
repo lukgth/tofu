@@ -70,7 +70,7 @@ func DefaultConfig() config.Site {
 
 const sampleHome = "# hello!\n\nthis is your tofu site. edit `content/home.md` to make it yours.\n"
 
-const samplePost = "# %s\n\nwrite your post here.\n"
+const samplePost = "write your post here.\n"
 
 const sampleCustomCSS = "/* your custom styles, loaded after style.css */\n"
 
@@ -121,7 +121,7 @@ func InitScaffold(dir string, force bool) ([]string, error) {
 		return nil, err
 	}
 	today := time.Now().Format("2006-01-02")
-	fm := fmt.Sprintf("---\ntitle: hello, tofu\ndate: %s\ndescription: your first tofu post\ntags:\n  - intro\n---\n\n%s", today, fmt.Sprintf(samplePost, "hello, tofu"))
+	fm := fmt.Sprintf("---\ntitle: hello, tofu\ndate: %s\ndescription: your first tofu post\ntags:\n  - intro\n---\n\n%s", today, samplePost)
 	if err := mk(filepath.Join("content", "posts", "hello-tofu.md"), fm+"\n"); err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func CreatePost(root string, in NewPostInput) (string, error) {
 	b.WriteString("---\n\n")
 	body := in.Body
 	if strings.TrimSpace(body) == "" {
-		body = fmt.Sprintf(samplePost, in.Title)
+		body = samplePost
 	}
 	b.WriteString(body)
 	if !strings.HasSuffix(body, "\n") {

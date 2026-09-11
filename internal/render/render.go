@@ -352,9 +352,27 @@ func writePost(p post.Post, base renderCtx, outDir string) error {
 		DateISO:    p.Date.Format("2006-01-02"),
 		DatePretty: p.Date.Format("02 Jan, 2006"),
 		Tags:       p.Frontmatter.Tags,
-		BodyHTML:   template.HTML(MarkdownToHTML(p.BodyMarkdown)),
+		BodyHTML:   template.HTML(stripDuplicateTitle(MarkdownToHTML(p.BodyMarkdown), p.Frontmatter.Title)),
 	}
 	return page(t, "post.html", data, ctx, filepath.Join(outDir, "articles", p.Slug+".html"))
+}
+
+// stripDuplicateTitle removes a leading <h1> from the rendered body when it
+// merely repeats the frontmatter title — the post template already prints it.
+func stripDuplicateTitle(bodyHTML, title string) string {
+	trimmed := strings.TrimLeft(bodyHTML, " \t\n")
+	if !strings.HasPrefix(trimmed, "<h1>") {
+		return bodyHTML
+	}
+	end := strings.Index(trimmed, "</h1>")
+	if end < 0 {
+		return bodyHTML
+	}
+	heading := strings.TrimSpace(html.UnescapeString(trimmed[4:end]))
+	if strings.EqualFold(heading, strings.TrimSpace(title)) {
+		return trimmed[end+5:]
+	}
+	return bodyHTML
 }
 
 func take[T any](xs []T, n int) []T {

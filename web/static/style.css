@@ -159,7 +159,7 @@ strong, b {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-main);
+  font-family: var(--font-secondary);
   color: var(--heading-color);
   letter-spacing: normal;
   line-height: 1.2;
@@ -167,12 +167,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 nav h2 {
-  font-family: var(--font-secondary);
   color: var(--header-color);
-}
-
-body.home h1, body.home h2, body.home h3 {
-  font-family: var(--font-secondary);
 }
 
 h1 {
