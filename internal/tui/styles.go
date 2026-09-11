@@ -123,12 +123,17 @@ func newList(items []list.Item, isDark bool, width, height int) list.Model {
 	return l
 }
 
-// tableStyles restyles the table for the palette.
+// tableStyles restyles the table for the palette: a left cursor bar on the
+// selected row (matching the menu), accent-tinted header, dim unselected.
 func tableStyles() table.Styles {
 	return table.Styles{
-		Header:   lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(colorHeader)).Padding(0, 1),
+		Header:   lipgloss.NewStyle().Foreground(lipgloss.Color(colorDim)).Padding(0, 1),
 		Cell:     lipgloss.NewStyle().Padding(0, 1),
-		Selected: lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(colorSelItem)),
+		Selected: lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), false, false, false, true).
+			BorderForeground(lipgloss.Color(colorCursor)).
+			Foreground(lipgloss.Color(colorSelItem)).
+			Bold(true),
 	}
 }
 

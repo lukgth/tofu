@@ -1,12 +1,11 @@
 package tui
 
 import (
-	"strings"
-
 	"charm.land/bubbles/v2/filepicker"
 	"charm.land/bubbles/v2/textarea"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type stepKind int
@@ -62,10 +61,11 @@ func newFilePicker(o Options) filepicker.Model {
 type choiceModel struct {
 	cursor  int
 	options []string
+	width   int
 }
 
 func newChoice(options []string, isDark bool, width int) choiceModel {
-	return choiceModel{options: options}
+	return choiceModel{options: options, width: width}
 }
 
 func (c *choiceModel) selected() string {
@@ -100,18 +100,18 @@ func (c choiceModel) update(msg tea.KeyPressMsg) choiceModel {
 	return c
 }
 
-// view renders all options, cursor row highlighted with the accent.
+// view renders all options; the selected row gets an accent border card and
+// the others stay dim, so the cursor is visible without stealing the row.
 func (c choiceModel) view(isDark bool) string {
-	var b strings.Builder
+	sel := FocusedBorder.Width(c.width-2).Padding(0, 1)
+	plain := BlurredBorder.Width(c.width-2).Padding(0, 1)
+	var cards []string
 	for i, opt := range c.options {
 		if i == c.cursor {
-			b.WriteString(Accent.Render("> " + opt))
+			cards = append(cards, sel.Render(Accent.Render("● "+opt)))
 		} else {
-			b.WriteString(Dim.Render("  " + opt))
-		}
-		if i < len(c.options)-1 {
-			b.WriteString("\n")
+			cards = append(cards, plain.Render(Dim.Render("○ "+opt)))
 		}
 	}
-	return b.String()
+	return lipgloss.JoinVertical(lipgloss.Left, cards...)
 }

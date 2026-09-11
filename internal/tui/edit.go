@@ -111,6 +111,8 @@ func (m editPickerModel) Init() tea.Cmd { return SlideCmd(m.slide, m.opts.NoAnim
 func (m editPickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		m.table.SetWidth(msg.Width)
+		m.table.SetHeight(msg.Height - 6)
 		return m, nil
 	case frameMsg:
 		var cmd tea.Cmd
