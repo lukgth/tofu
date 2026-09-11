@@ -1,3 +1,5 @@
 /tofu
 example/public/
 *.test
+public/
+dist/
