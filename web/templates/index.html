@@ -1,0 +1,7 @@
+<h1>{{.Heading}}</h1>
+{{.HomeHTML}}
+<h2>Recent posts</h2>
+{{if .Posts}}<ul class="blog-posts">
+  {{range .Posts}}<li><span><time datetime="{{.DateISO}}">{{.DatePretty}}</time></span><a href="/articles/{{.Slug}}.html">{{.Title}}</a></li>
+  {{end}}</ul>
+{{else}}<p>No posts yet.</p>{{end}}

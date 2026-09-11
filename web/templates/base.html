@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{.Description}}">
+  <title>{{.Title}} — {{.SiteTitle}}</title>
+  <link rel="stylesheet" href="/assets-blog/style.css">
+  {{.ExtraHead}}
+</head>
+<body>
+  <header>
+    <div class="title">
+      <a href="/">{{.SiteTitle}}</a>
+    </div>
+    <nav>
+      {{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}
+    </nav>
+  </header>
+  <main>
+    {{.Content}}
+  </main>
+  <footer>{{.Footer}}</footer>
+</body>
+</html>
