@@ -12,6 +12,7 @@ import (
 	texttemplate "text/template"
 	"time"
 
+	"github.com/alecthomas/chroma/v2"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/yuin/goldmark"
@@ -203,7 +204,7 @@ func renderCSS(cfg config.Site) ([]byte, error) {
 	if err := t.Execute(&buf, cfg); err != nil {
 		return nil, err
 	}
-	if err := writeChromaCSS(&buf); err != nil {
+	if err := writeChromaCSS(&buf, cfg); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
@@ -212,15 +213,17 @@ func renderCSS(cfg config.Site) ([]byte, error) {
 // writeChromaCSS appends Chroma's class-based styles: the github (light)
 // palette as-is, and the github-dark palette scoped to dark mode so code
 // highlighting follows the theme toggle.
-func writeChromaCSS(buf *bytes.Buffer) error {
+func writeChromaCSS(buf *bytes.Buffer, cfg config.Site) error {
+	lightStyle := pickChromaStyle(cfg.Theme.CodeStyle, "github")
+	darkStyle := pickChromaStyle(cfg.Theme.DarkCodeStyle, "github-dark")
 	formatter := chromahtml.New(chromahtml.WithClasses(true))
 	var lightBuf bytes.Buffer
-	if err := formatter.WriteCSS(&lightBuf, styles.Get("github")); err != nil {
+	if err := formatter.WriteCSS(&lightBuf, lightStyle); err != nil {
 		return err
 	}
 	buf.WriteString(cleanChromaCSS(lightBuf.String(), ""))
 	var darkBuf bytes.Buffer
-	if err := formatter.WriteCSS(&darkBuf, styles.Get("github-dark")); err != nil {
+	if err := formatter.WriteCSS(&darkBuf, darkStyle); err != nil {
 		return err
 	}
 	dark := cleanChromaCSS(darkBuf.String(), "html.dark ")
@@ -229,6 +232,17 @@ func writeChromaCSS(buf *bytes.Buffer) error {
 	buf.WriteString("}\n")
 	buf.WriteString(dark)
 	return nil
+}
+
+// pickChromaStyle resolves a Chroma style name, falling back when the knob
+// is empty or names an unknown style.
+func pickChromaStyle(name, fallback string) *chroma.Style {
+	if name != "" {
+		if s := styles.Get(name); s != nil {
+			return s
+		}
+	}
+	return styles.Get(fallback)
 }
 
 // cleanChromaCSS normalizes a Chroma WriteCSS sheet: it strips the inline

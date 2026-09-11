@@ -13,7 +13,7 @@
   --secondary: {{.Theme.Secondary}};
   --accent: {{.Theme.Accent}};
   --code-bg: {{.Theme.CodeBG}};
-  --highlight: {{.Theme.Highlight}};
+  --highlight: color-mix(in srgb, var(--accent) 55%, white);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -50,7 +50,7 @@
 }
 
 :root.light {
-  --highlight: {{.Theme.Highlight}};
+  --highlight: color-mix(in srgb, var(--accent) 55%, white);
   --text-color: {{.Theme.Text}};
   --heading-color: {{.Theme.Text}};
   --header-color: {{.Theme.HeaderColor}};

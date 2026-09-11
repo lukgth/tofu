@@ -37,6 +37,8 @@ type Theme struct {
 	DarkText        string `toml:"dark_text"`
 	DarkLink        string `toml:"dark_link"`
 	DarkVisited     string `toml:"dark_visited"`
+	CodeStyle       string `toml:"code_style"`
+	DarkCodeStyle   string `toml:"dark_code_style"`
 	DarkBlockquote  string `toml:"dark_blockquote"`
 }
 
