@@ -21,7 +21,10 @@
     <nav>
       <h2>{{.SiteTitle}}</h2>
       <div class="squiggle" aria-hidden="true"></div>
-      <p>{{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}<button id="theme-toggle" aria-label="toggle dark mode"></button></p>
+      <div class="nav-row">
+        <p>{{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}</p>
+        <button id="theme-toggle" aria-label="toggle dark mode"></button>
+      </div>
     </nav>
   </header>
   <main>

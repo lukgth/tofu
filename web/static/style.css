@@ -34,6 +34,7 @@
 :root.dark {
   --background-color: {{.Theme.DarkBackground}};
   --text-color: {{.Theme.DarkText}};
+  --heading-color: {{.Theme.DarkText}};
   --header-color: {{.Theme.DarkHeaderColor}};
   --visited-color: {{.Theme.DarkVisited}};
   --blockquote-color: {{.Theme.DarkBlockquote}};
@@ -127,7 +128,7 @@ p {
 }
 
 mark {
-  background-color: var(--primary);
+  background-color: var(--accent);
   border-radius: 4px;
   padding: 0 3px;
 }
@@ -226,44 +227,26 @@ time {
   font-size: 0.875rem;
   padding: 0 0.3125rem;
   border-radius: 3px;
-  background-color: var(--primary);
+  background-color: var(--accent);
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.light) time {
     color: black;
-    background-color: var(--primary);
   }
 }
 
 :root.dark time {
   color: black;
-  background-color: var(--primary);
-}
-
-img {
-  max-width: 100%;
-  display: block;
-  margin: 1rem auto;
-  border-radius: 15px;
-}
-
-time {
-  font-style: italic;
-  font-size: 0.875rem;
-  padding: 0 0.3125rem;
-  border-radius: 3px;
-  background-color: var(--primary);
 }
 #theme-toggle {
   font-family: var(--font-main);
   font-size: 0.875rem;
-  background: unset;
-  color: var(--link-color);
+  background: var(--accent);
+  color: var(--text-color);
   border: unset;
-  padding: unset;
+  border-radius: 3px;
+  padding: 0 0.3125rem;
   cursor: pointer;
-  margin-left: 5px;
-  display: inline-block;
   transition: transform 0.3s ease;
 }
 
@@ -271,6 +254,16 @@ time {
   transform: translateY(-1.5px);
   filter: brightness(0.6);
 }
+.nav-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-row p {
+  margin-bottom: 0;
+}
+
 
 @media (prefers-color-scheme: dark) {
   time {

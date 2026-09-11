@@ -43,9 +43,9 @@ func DefaultConfig() config.Site {
 			Link:           "#9d6bb8",
 			Visited:        "#b48cb8",
 			Blockquote:     "#5c4d6b",
-			DarkBackground: "#1b1530",
+			DarkBackground: "#372947",
 			DarkText:       "#e5d9de",
-			DarkLink:       "#c084fc",
+			DarkLink:       "#d5b8f2",
 			DarkVisited:    "#a78bca",
 			DarkBlockquote: "#c4b5e0",
 			DarkPrimary:    "#8a6fc0",
@@ -57,8 +57,8 @@ func DefaultConfig() config.Site {
 		Header: config.Header{
 			Title: "My Tofu Site",
 			Nav: []config.NavItem{
-				{Label: "Home", URL: "/"},
-				{Label: "Blog", URL: "/articles/"},
+				{Label: "home", URL: "/"},
+				{Label: "blog", URL: "/articles/"},
 			},
 		},
 		Homepage: config.Homepage{
@@ -68,9 +68,9 @@ func DefaultConfig() config.Site {
 	}
 }
 
-const sampleHome = "# Hello!\n\nThis is your tofu site. Edit `content/home.md` to make it yours.\n"
+const sampleHome = "# hello!\n\nthis is your tofu site. edit `content/home.md` to make it yours.\n"
 
-const samplePost = "# %s\n\nWrite your post here.\n"
+const samplePost = "# %s\n\nwrite your post here.\n"
 
 const sampleCustomCSS = "/* your custom styles, loaded after style.css */\n"
 
@@ -121,7 +121,7 @@ func InitScaffold(dir string, force bool) ([]string, error) {
 		return nil, err
 	}
 	today := time.Now().Format("2006-01-02")
-	fm := fmt.Sprintf("---\ntitle: Hello, tofu\ndate: %s\ndescription: Your first tofu post\ntags:\n  - intro\n---\n\n%s", today, fmt.Sprintf(samplePost, "Hello, tofu"))
+	fm := fmt.Sprintf("---\ntitle: hello, tofu\ndate: %s\ndescription: your first tofu post\ntags:\n  - intro\n---\n\n%s", today, fmt.Sprintf(samplePost, "hello, tofu"))
 	if err := mk(filepath.Join("content", "posts", "hello-tofu.md"), fm+"\n"); err != nil {
 		return nil, err
 	}
