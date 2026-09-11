@@ -220,7 +220,7 @@ code {
   font-family: var(--font-main);
   letter-spacing: normal;
   padding: 0.15rem 0.4rem;
-  border-radius: 10px;
+  border-radius: 3px;
   background-color: var(--code-bg);
   font-size: 0.9em;
 }
@@ -235,14 +235,14 @@ time {
 @media (prefers-color-scheme: dark) {
   :root:not(.light) time {
     color: #1d1530;
-    background-color: color-mix(in srgb, {{.Theme.DarkPrimary}} 25%, white);
+    background-color: #c9a0e8;
   }
 }
 
 
 :root.dark time {
   color: #1d1530;
-  background-color: color-mix(in srgb, {{.Theme.DarkPrimary}} 25%, white);
+  background-color: #c9a0e8;
 }
 #theme-toggle {
   font-family: var(--font-main);
