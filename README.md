@@ -1,11 +1,7 @@
 # tofu 🧊
 
-a tiny cute static blog generator. one binary, no fuss.
-
-built with [Bubble Tea], [Bubbles], [Lip Gloss], and [Harmonica].
-
-inspired by [Bear Blog], [hugo-bearblog], and [Charm]'s good taste.
-not affiliated, just a fan.
+a tiny cute static blog generator built with [Bubble Tea], [Bubbles],
+[Lip Gloss], and [Harmonica].
 
 ```text
 $ tofu
@@ -22,8 +18,8 @@ $ tofu
 
 ## Tutorial
 
-Let's start a site, write a post, and build it. `tofu init` also drops
-a first post, `hello-tofu.md`.
+Start a site, write a post, build it. `tofu init` also drops a first
+post, `hello-tofu.md`.
 
 ```sh
 $ tofu init mysite
@@ -45,15 +41,13 @@ quits, `/` filters.
 
 ## Installation
 
-Build (requires Go 1.24+). the binary is static, zero runtime files:
+Requires Go 1.24+.
 
 ```sh
 git clone https://github.com/you/tofu
 cd tofu
 CGO_ENABLED=0 go build -ldflags="-s -w" -o tofu ./cmd/tofu
 ```
-
-Drop it anywhere.
 
 ## Commands
 
@@ -102,7 +96,7 @@ serving public at http://127.0.0.1:8787 (ctrl+c to stop)
 
 ## Config
 
-One file, `tofu.toml`, at the site root:
+Everything lives in `tofu.toml` at the site root:
 
 ```toml
 title = "My Tofu Site"
@@ -135,7 +129,7 @@ Every color is a `[theme]` variable, including the full dark-mode set.
 
 ## Deploy
 
-`public/` is plain static files. Copy it anywhere. Done.
+`public/` is a plain static folder. Copy it to your host.
 
 ## Contributing
 
@@ -145,6 +139,3 @@ Issues and PRs welcome. MIT license.
 [Bubbles]: https://github.com/charmbracelet/bubbles
 [Lip Gloss]: https://github.com/charmbracelet/lipgloss
 [Harmonica]: https://github.com/charmbracelet/harmonica
-[Bear Blog]: https://bearblog.dev
-[hugo-bearblog]: https://github.com/janraasch/hugo-bearblog
-[Charm]: https://charm.sh
