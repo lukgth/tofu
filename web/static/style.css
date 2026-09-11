@@ -9,6 +9,7 @@
   --link-color: {{.Theme.Link}};
   --visited-color: {{.Theme.Visited}};
   --blockquote-color: {{.Theme.Blockquote}};
+  --blink: {{.Theme.Blink}};
   --primary: {{.Theme.Primary}};
   --secondary: {{.Theme.Secondary}};
   --accent: {{.Theme.Accent}};
@@ -25,6 +26,7 @@
     --link-color: {{.Theme.DarkLink}};
     --visited-color: {{.Theme.DarkVisited}};
     --blockquote-color: {{.Theme.DarkBlockquote}};
+  --blink: {{.Theme.DarkBlink}};
     --primary: {{.Theme.DarkPrimary}};
     --secondary: {{.Theme.DarkSecondary}};
     --accent: {{.Theme.DarkAccent}};
@@ -43,6 +45,7 @@
   --link-color: {{.Theme.DarkLink}};
   --visited-color: {{.Theme.DarkVisited}};
   --blockquote-color: {{.Theme.DarkBlockquote}};
+  --blink: {{.Theme.DarkBlink}};
   --primary: {{.Theme.DarkPrimary}};
   --secondary: {{.Theme.DarkSecondary}};
   --accent: {{.Theme.DarkAccent}};
@@ -57,6 +60,7 @@
   --link-color: {{.Theme.Link}};
   --visited-color: {{.Theme.Visited}};
   --blockquote-color: {{.Theme.Blockquote}};
+  --blink: {{.Theme.Blink}};
   --primary: {{.Theme.Primary}};
   --secondary: {{.Theme.Secondary}};
   --accent: {{.Theme.Accent}};
@@ -170,9 +174,6 @@ nav a {
   margin-right: 8px;
   display: inline-block;
 }
-.visited-post {
-  font-style: italic;
-}
 
 
 strong, b {
@@ -189,7 +190,33 @@ h1, h2, h3, h4, h5, h6 {
 
 nav h2 {
   color: var(--header-color);
+  display: inline-block;
 }
+nav h2::after {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.12em;
+  margin-left: 0.15em;
+  vertical-align: baseline;
+  background-color: var(--blink);
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  nav h2::after {
+    animation: none;
+  }
+  main {
+    animation: none;
+  }
+}
+
 
 h1 {
   font-size: 1.5em;
@@ -215,7 +242,7 @@ h3 {
   mask-size: 100% 100%;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M0 5 Q12.5 0 25 5 T50 5 T75 5 T100 5' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
   -webkit-mask-size: 100% 100%;
-  margin: 0.5rem 0;
+  margin: 0.5rem 0 0.25rem;
 }
 
 pre {
@@ -252,13 +279,11 @@ time {
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.light) time {
-    color: #1d1530;
+    color: var(--text-color);
   }
 }
-
-
 :root.dark time {
-  color: #1d1530;
+  color: var(--text-color);
 }
 #theme-toggle {
   font-family: var(--font-main);
@@ -282,15 +307,18 @@ time {
 }
 
 .nav-row p {
-  margin-bottom: 0;
+  margin: 0;
 }
 
-
 @media (prefers-color-scheme: dark) {
-  time {
-    color: black;
+  :root:not(.light) time {
+    color: var(--text-color);
     background-color: var(--primary);
   }
+}
+:root.dark time {
+  color: var(--text-color);
+  background-color: var(--primary);
 }
 
 .footnotes {
@@ -332,6 +360,17 @@ hr {
   border: none;
   border-top: 1px dashed var(--accent);
 }
+blockquote {
+  margin: 1.2em 0;
+  padding: 0.5rem 1.25rem;
+  border-left: 0.25rem solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-radius: 12px 4px 12px 4px;
+  color: var(--blockquote-color);
+}
+blockquote p {
+  margin-bottom: 0;
+}
 
 .tags {
   margin: 0.5rem 0 1.5rem;
@@ -367,8 +406,7 @@ ul.blog-posts li a {
   color: var(--link-color);
 }
 
-ul.blog-posts li a:visited,
-ul.blog-posts li a.visited-post {
+ul.blog-posts li a:visited {
   color: var(--visited-color);
 }
 
@@ -386,4 +424,24 @@ ul.blog-posts li a.visited-post {
 
 @view-transition {
   navigation: auto;
+}
+
+main {
+  animation: fade-in 0.35s ease-out;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main {
+    animation: none;
+  }
 }
