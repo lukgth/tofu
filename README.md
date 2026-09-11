@@ -5,7 +5,7 @@ a tiny cute static blog generator. one binary, no fuss.
 built with [Bubble Tea], [Bubbles], [Lip Gloss], and [Harmonica].
 
 inspired by [Bear Blog], [hugo-bearblog], and [Charm]'s good taste.
-not affiliated — just a fan.
+not affiliated, just a fan.
 
 ```text
 $ tofu
@@ -22,8 +22,8 @@ $ tofu
 
 ## Tutorial
 
-Let's start a site, write a post, and build it. (`tofu init` also drops
-a first post, `hello-tofu.md`.)
+Let's start a site, write a post, and build it. `tofu init` also drops
+a first post, `hello-tofu.md`.
 
 ```sh
 $ tofu init mysite
@@ -45,7 +45,7 @@ quits, `/` filters.
 
 ## Installation
 
-Build (requires Go 1.24+); the binary is static with zero runtime files:
+Build (requires Go 1.24+). the binary is static, zero runtime files:
 
 ```sh
 git clone https://github.com/you/tofu
@@ -57,13 +57,13 @@ Drop it anywhere.
 
 ## Commands
 
-- `tofu` — open the home menu (interactive)
-- `tofu init [dir]` — scaffold a new site (`--force` to write into a non-empty dir)
-- `tofu new` — write a new blog post
-- `tofu edit [slug]` — edit an existing post
-- `tofu build` — render the site to `public/` (`--out`, `--drafts`)
-- `tofu list` — list posts, newest first (`--drafts`)
-- `tofu serve` — preview locally (`--port`, `--build`)
+- `tofu` opens the home menu
+- `tofu init [dir]` scaffolds a new site (`--force` for non-empty dirs)
+- `tofu new` writes a new blog post
+- `tofu edit [slug]` edits an existing post
+- `tofu build` renders the site to `public/` (`--out`, `--drafts`)
+- `tofu list` lists posts, newest first (`--drafts`)
+- `tofu serve` previews locally (`--port`, `--build`)
 
 ### tofu new / tofu edit
 
@@ -75,9 +75,9 @@ $ tofu edit hello-world --title "Hello there"
 updated content/posts/hello-world.md
 ```
 
-`new` flags are optional; without them the wizard asks. `edit` flags
-(`--title/--tags/--description/--date/--draft-set`) work headless; with
-a TTY you get a date|slug|title table and a full editor flow.
+`new` flags are optional, the wizard asks for whatever's missing. `edit`
+flags (`--title/--tags/--description/--date/--draft-set`) work headless.
+With a TTY you get a date|slug|title table and a full editor flow.
 
 ### tofu build / tofu list
 
@@ -115,7 +115,7 @@ width = "720px"
 link = "#3273dc"
 ```
 
-The full sample — every theme color, nav, homepage heading — is in
+The full sample (every theme color, nav, homepage heading) is in
 [example/tofu.toml](example/tofu.toml). Unknown keys are errors.
 
 ## Output
@@ -131,11 +131,11 @@ public/
 ## Customize
 
 Every color is a `[theme]` variable, including the full dark-mode set.
-`assets-blog/custom.css` loads after `style.css` and is yours entirely.
+`assets-blog/custom.css` loads after `style.css`, so it wins.
 
 ## Deploy
 
-`public/` is plain static files — copy it anywhere. Done.
+`public/` is plain static files. Copy it anywhere. Done.
 
 ## Contributing
 
