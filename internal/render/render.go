@@ -210,28 +210,106 @@ func renderCSS(cfg config.Site) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// writeChromaCSS appends Chroma's class-based styles: the github (light)
-// palette as-is, and the github-dark palette scoped to dark mode so code
-// highlighting follows the theme toggle.
+// writeChromaCSS appends Chroma's class-based styles as a single rule set:
+// each color property that differs between the light and dark palettes becomes
+// a light-dark() value, so code highlighting follows the page's color-scheme.
 func writeChromaCSS(buf *bytes.Buffer, cfg config.Site) error {
-	lightStyle := pickChromaStyle(cfg.Theme.CodeStyle, "github")
-	darkStyle := pickChromaStyle(cfg.Theme.DarkCodeStyle, "github-dark")
-	formatter := chromahtml.New(chromahtml.WithClasses(true))
-	var lightBuf bytes.Buffer
-	if err := formatter.WriteCSS(&lightBuf, lightStyle); err != nil {
+	light, err := chromaSheet(pickChromaStyle(cfg.Theme.CodeStyle, "github"))
+	if err != nil {
 		return err
 	}
-	buf.WriteString(cleanChromaCSS(lightBuf.String(), ""))
-	var darkBuf bytes.Buffer
-	if err := formatter.WriteCSS(&darkBuf, darkStyle); err != nil {
+	dark, err := chromaSheet(pickChromaStyle(cfg.Theme.DarkCodeStyle, "github-dark"))
+	if err != nil {
 		return err
 	}
-	dark := cleanChromaCSS(darkBuf.String(), "html.dark ")
-	buf.WriteString("@media (prefers-color-scheme: dark) {\n")
-	buf.WriteString(strings.ReplaceAll(dark, "html.dark ", "html:not(.light) "))
-	buf.WriteString("}\n")
-	buf.WriteString(dark)
+	darkBySel := map[string]map[string]string{}
+	for _, r := range dark {
+		darkBySel[r.sel] = r.vals
+	}
+	for _, r := range light {
+		parts := make([]string, 0, len(r.keys))
+		for _, k := range r.keys {
+			lv := r.vals[k]
+			dv, ok := darkBySel[r.sel][k]
+			if !ok || dv == lv {
+				parts = append(parts, k+": "+lv)
+				continue
+			}
+			if isColorProp(k) {
+				parts = append(parts, k+": light-dark("+lv+", "+dv+")")
+			} else {
+				parts = append(parts, k+": "+lv)
+			}
+		}
+		buf.WriteString(r.sel + " { " + strings.Join(parts, "; ") + " }\n")
+	}
 	return nil
+}
+
+// chromaRule is one `selector { props }` line from a Chroma WriteCSS sheet.
+type chromaRule struct {
+	sel  string
+	keys []string
+	vals map[string]string
+}
+
+// chromaSheet parses Chroma's one-liner CSS into ordered rules, dropping the
+// `/* comment */ ` prefixes, the `.bg` rule, and hardcoded black/white block
+// backgrounds (the site's --code-bg owns those).
+func chromaSheet(style *chroma.Style) ([]chromaRule, error) {
+	var raw bytes.Buffer
+	if err := chromahtml.New(chromahtml.WithClasses(true)).WriteCSS(&raw, style); err != nil {
+		return nil, err
+	}
+	var rules []chromaRule
+	for _, line := range strings.Split(raw.String(), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "/*") {
+			if i := strings.Index(trimmed, "*/"); i >= 0 {
+				trimmed = strings.TrimSpace(trimmed[i+2:])
+			} else {
+				continue
+			}
+		}
+		if trimmed == "" {
+			continue
+		}
+		open := strings.Index(trimmed, "{")
+		if open < 0 {
+			continue
+		}
+		sel := strings.TrimSpace(trimmed[:open])
+		if sel == ".bg" {
+			continue
+		}
+		props := strings.TrimSuffix(strings.TrimSpace(trimmed[open+1:]), "}")
+		r := chromaRule{sel: sel, vals: map[string]string{}}
+		for _, decl := range strings.Split(props, ";") {
+			decl = strings.TrimSpace(decl)
+			if decl == "" {
+				continue
+			}
+			colon := strings.Index(decl, ":")
+			if colon < 0 {
+				continue
+			}
+			k := strings.TrimSpace(decl[:colon])
+			v := strings.TrimSpace(decl[colon+1:])
+			if k == "background-color" && (v == "#ffffff" || v == "#000000") {
+				continue
+			}
+			r.keys = append(r.keys, k)
+			r.vals[k] = v
+		}
+		rules = append(rules, r)
+	}
+	return rules, nil
+}
+
+// isColorProp reports whether a CSS property carries a color, so its value is
+// eligible for light-dark() merging.
+func isColorProp(k string) bool {
+	return k == "color" || strings.HasSuffix(k, "-color")
 }
 
 // pickChromaStyle resolves a Chroma style name, falling back when the knob
@@ -243,48 +321,6 @@ func pickChromaStyle(name, fallback string) *chroma.Style {
 		}
 	}
 	return styles.Get(fallback)
-}
-
-// cleanChromaCSS normalizes a Chroma WriteCSS sheet: it strips the inline
-// `/* Name */ ` comments, prefixes every selector with prefix, and drops
-// the hardcoded background rules (.bg, .chroma) so the site's --code-bg
-// owns the code block background in every theme.
-func cleanChromaCSS(css, prefix string) string {
-	var b strings.Builder
-	for _, line := range strings.Split(css, "\n") {
-		trimmed := strings.TrimSpace(line)
-		// strip a leading `/* Name */ ` comment
-		if strings.HasPrefix(trimmed, "/*") {
-			if i := strings.Index(trimmed, "*/"); i >= 0 {
-				trimmed = strings.TrimSpace(trimmed[i+2:])
-			} else {
-				continue
-			}
-		}
-		if trimmed == "" {
-			continue
-		}
-		// one-liner rule: `selector { props }`
-		open := strings.Index(trimmed, "{")
-		if open < 0 {
-			continue
-		}
-		sel := strings.TrimSpace(trimmed[:open])
-		props := strings.TrimSpace(trimmed[open+1:])
-		props = strings.TrimSuffix(props, "}")
-		// drop hardcoded backgrounds; the site's --code-bg owns them
-		if sel == ".bg" {
-			continue
-		}
-		props = strings.ReplaceAll(props, "background-color: #ffffff;", "")
-		props = strings.ReplaceAll(props, "background-color: #000000;", "")
-		parts := strings.Split(sel, ",")
-		for j := range parts {
-			parts[j] = prefix + strings.TrimSpace(parts[j])
-		}
-		b.WriteString(strings.Join(parts, ", ") + " { " + strings.TrimSpace(props) + " }\n")
-	}
-	return b.String()
 }
 
 func copyCustomCSS(siteRoot, outDir string) error {

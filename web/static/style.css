@@ -6,67 +6,19 @@
   --font-header-style: {{.Theme.FontHeaderStyle}};
   --font-header-weight: {{.Theme.FontHeaderWeight}};
   --font-scale: {{.Theme.FontScale}};
-  --text-color: {{.Theme.Text}};
-  --heading-color: {{.Theme.Text}};
-  --header-color: {{.Theme.HeaderColor}};
-  --link-color: {{.Theme.Link}};
-  --visited-color: {{.Theme.Visited}};
-  --blockquote-color: {{.Theme.Blockquote}};
-  --primary: {{.Theme.Primary}};
-  --secondary: {{.Theme.Secondary}};
-  --accent: {{.Theme.Accent}};
-  --code-bg: {{.Theme.CodeBG}};
-  --highlight: color-mix(in srgb, var(--accent) 65%, white);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --highlight: {{.Theme.DarkHighlight}};
-    --text-color: {{.Theme.DarkText}};
-    --heading-color: {{.Theme.DarkText}};
-    --header-color: {{.Theme.DarkHeaderColor}};
-    --link-color: {{.Theme.DarkLink}};
-    --visited-color: {{.Theme.DarkVisited}};
-    --blockquote-color: {{.Theme.DarkBlockquote}};
-  --blink: {{.Theme.DarkBlink}};
-    --primary: {{.Theme.DarkPrimary}};
-    --secondary: {{.Theme.DarkSecondary}};
-    --accent: {{.Theme.DarkAccent}};
-    --code-bg: {{.Theme.DarkCodeBG}};
-  }
-}
-
-/* Manual theme override: class on <html> set by the toggle (wins over the
-   OS preference). */
-:root.dark {
-  --background-color: {{.Theme.DarkBackground}};
-  --highlight: {{.Theme.DarkHighlight}};
-  --text-color: {{.Theme.DarkText}};
-  --heading-color: {{.Theme.DarkText}};
-  --header-color: {{.Theme.DarkHeaderColor}};
-  --link-color: {{.Theme.DarkLink}};
-  --visited-color: {{.Theme.DarkVisited}};
-  --blockquote-color: {{.Theme.DarkBlockquote}};
-  --blink: {{.Theme.DarkBlink}};
-  --primary: {{.Theme.DarkPrimary}};
-  --secondary: {{.Theme.DarkSecondary}};
-  --accent: {{.Theme.DarkAccent}};
-  --code-bg: {{.Theme.DarkCodeBG}};
-}
-
-:root.light {
-  --highlight: color-mix(in srgb, var(--accent) 65%, white);
-  --text-color: {{.Theme.Text}};
-  --heading-color: {{.Theme.Text}};
-  --header-color: {{.Theme.HeaderColor}};
-  --link-color: {{.Theme.Link}};
-  --visited-color: {{.Theme.Visited}};
-  --blockquote-color: {{.Theme.Blockquote}};
-  --blink: {{.Theme.Blink}};
-  --primary: {{.Theme.Primary}};
-  --secondary: {{.Theme.Secondary}};
-  --accent: {{.Theme.Accent}};
-  --code-bg: {{.Theme.CodeBG}};
+  --background-color: light-dark({{.Theme.Background}}, {{.Theme.DarkBackground}});
+  --text-color: light-dark({{.Theme.Text}}, {{.Theme.DarkText}});
+  --heading-color: light-dark({{.Theme.Text}}, {{.Theme.DarkText}});
+  --header-color: light-dark({{.Theme.HeaderColor}}, {{.Theme.DarkHeaderColor}});
+  --link-color: light-dark({{.Theme.Link}}, {{.Theme.DarkLink}});
+  --visited-color: light-dark({{.Theme.Visited}}, {{.Theme.DarkVisited}});
+  --blockquote-color: light-dark({{.Theme.Blockquote}}, {{.Theme.DarkBlockquote}});
+  --blink: light-dark({{.Theme.Blink}}, {{.Theme.DarkBlink}});
+  --primary: light-dark({{.Theme.Primary}}, {{.Theme.DarkPrimary}});
+  --secondary: light-dark({{.Theme.Secondary}}, {{.Theme.DarkSecondary}});
+  --accent: light-dark({{.Theme.Accent}}, {{.Theme.DarkAccent}});
+  --code-bg: light-dark({{.Theme.CodeBG}}, {{.Theme.DarkCodeBG}});
+  --highlight: light-dark(color-mix(in srgb, var(--accent) 65%, white), {{.Theme.DarkHighlight}});
 }
 
 @font-face {
@@ -165,20 +117,12 @@ mark {
   background-color: var(--highlight);
   border-radius: 4px;
   padding: 0 3px;
+  color: light-dark(var(--text-color), #1d1530);
 }
 
-:root.dark mark,
-:root.dark mark strong,
-:root.dark mark b {
-  color: #1d1530;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) mark,
-  :root:not(.light) mark strong,
-  :root:not(.light) mark b {
-    color: #1d1530;
-  }
+mark strong,
+mark b {
+  color: inherit;
 }
 
 a {
@@ -277,16 +221,8 @@ time {
   font-size: 0.875rem;
   padding: 0 0.3125rem;
   border-radius: 3px;
-  background-color: var(--highlight);
-  color: #1d1530;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) time {
-    color: var(--text-color);
-  }
-}
-:root.dark time {
-  color: var(--text-color);
+  background-color: light-dark(var(--highlight), var(--primary));
+  color: light-dark(#1d1530, var(--text-color));
 }
 #theme-toggle {
   font-family: var(--font-main);
@@ -313,16 +249,6 @@ time {
   margin: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) time {
-    color: var(--text-color);
-    background-color: var(--primary);
-  }
-}
-:root.dark time {
-  color: var(--text-color);
-  background-color: var(--primary);
-}
 
 .footnotes {
   margin-top: 2rem;

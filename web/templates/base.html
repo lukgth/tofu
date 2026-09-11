@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{{.Description}}">
   <title>{{.Title}} - {{.SiteTitle}}</title>
+  <meta name="color-scheme" content="light dark">
   <script>
     (function () {
       var t = localStorage.getItem("theme");
       if (t === "dark" || t === "light") {
-        document.documentElement.classList.add(t);
+        document.querySelector('meta[name="color-scheme"]').content = t;
       }
     })();
   </script>
@@ -33,22 +34,24 @@
   <footer>{{.Footer}}</footer>
   <script>
     (function () {
+      var meta = document.querySelector('meta[name="color-scheme"]');
+      var mq = window.matchMedia("(prefers-color-scheme: dark)");
       var btn = document.getElementById("theme-toggle");
-      var root = document.documentElement;
+      function current() {
+        if (meta.content === "dark") return "dark";
+        if (meta.content === "light") return "light";
+        return mq.matches ? "dark" : "light";
+      }
       function paint() {
-        var dark = root.classList.contains("dark") ||
-          (!root.classList.contains("light") &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches);
-        btn.textContent = dark ? "☀" : "☾";
+        btn.textContent = current() === "dark" ? "\u2600" : "\u263e";
       }
       btn.addEventListener("click", function () {
-        var next = root.classList.contains("dark") ? "light" : "dark";
-        root.classList.remove("light", "dark");
-        root.classList.add(next);
+        var next = current() === "dark" ? "light" : "dark";
+        meta.content = next;
         localStorage.setItem("theme", next);
         paint();
       });
-      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paint);
+      mq.addEventListener("change", paint);
       paint();
     })();
   </script>

@@ -26,13 +26,13 @@ Colors are rendered into `assets-blog/style.css` as CSS custom properties:
 }
 ```
 
-Dark mode flips the same variables via `prefers-color-scheme`, plus a manual override: the site ships a light/dark toggle that sets `html.dark` / `html.light` classes, and the stylesheet mirrors every dark value under both the media query and `html.dark` (manual choice wins over the OS).
+All light/dark values are emitted as CSS `light-dark(light, dark)`. A single `<meta name="color-scheme">` in `<head>` selects the scheme: it defaults to `light dark` (following the OS), while the header toggle rewrites its `content` to `light` or `dark` and persists that choice in `localStorage`. No classes or `prefers-color-scheme` media blocks are used.
 
 ## Highlight & date pill
 
-- **Light mode**: the pill derives from your `accent` — `color-mix(in srgb, var(--accent) 55%, white)` — a brighter pastel of whatever accent you pick. The `highlight` knob is unused in light mode.
+- **Light mode**: the highlight derives from your `accent` — `color-mix(in srgb, var(--accent) 65%, white)` — a brighter pastel of whatever accent you pick.
 - **Dark mode**: `dark_highlight` is used directly (default lilac `#c9a0e8`).
-- Text on pills/highlights is fixed `#1d1530` (contrast-checked) and is not configurable.
+- Text on pills/highlights uses `light-dark()` to select a dark foreground in light mode and the theme text color in dark mode.
 
 ## Fonts
 

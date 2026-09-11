@@ -84,8 +84,12 @@ func TestBuildOutputTree(t *testing.T) {
 		}
 	}
 	css, _ := os.ReadFile(filepath.Join(out, "assets-blog", "style.css"))
-	if !strings.Contains(string(css), "--width") || !strings.Contains(string(css), "prefers-color-scheme") {
-		t.Error("style.css missing theme vars or dark media query")
+	s := string(css)
+	if !strings.Contains(s, "--width") || !strings.Contains(s, "light-dark(") {
+		t.Error("style.css missing theme vars or light-dark() values")
+	}
+	if strings.Contains(s, "prefers-color-scheme") || strings.Contains(s, "html.dark") {
+		t.Error("style.css must not use class/media dark scoping")
 	}
 	if !strings.Contains(string(css), "@font-face") || !strings.Contains(string(css), "Rubik") {
 		t.Error("style.css missing @font-face Rubik")
