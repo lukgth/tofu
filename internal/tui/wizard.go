@@ -68,6 +68,20 @@ func newChoice(options []string, isDark bool, width int) choiceModel {
 	return choiceModel{options: options, width: width}
 }
 
+// indexAt maps a clicked terminal row to the option whose card contains it;
+// each card renders as 3 rows (top border, content, bottom border), stacked
+// with no gap. row is relative to the first card's top border.
+func (c choiceModel) indexAt(row int) int {
+	if row < 0 {
+		return -1
+	}
+	idx := row / 3
+	if idx >= len(c.options) {
+		return -1
+	}
+	return idx
+}
+
 func (c *choiceModel) selected() string {
 	if c.cursor < 0 || c.cursor >= len(c.options) {
 		return ""

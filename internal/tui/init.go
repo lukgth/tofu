@@ -107,6 +107,35 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		w.screen = "done"
 		return w, nil
 
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button != tea.MouseLeft {
+			return w, nil
+		}
+		switch w.screen {
+		case "review":
+			// Yes/No cards start after title + summary viewport; select
+			// the clicked card and confirm.
+			idx := w.confirm.indexAt(msg.Mouse().Y - 4)
+			if idx >= 0 {
+				w.confirm.cursor = idx
+				return w, w.doChoiceAdvance()
+			}
+			return w, nil
+		case "prompt":
+			s := w.current()
+			if s != nil && s.kind == stepChoice {
+				// Choice cards start at body row (title + label above).
+				if idx := s.choice.indexAt(msg.Mouse().Y - 2); idx >= 0 {
+					s.choice.cursor = idx
+					return w, w.doChoiceAdvance()
+				}
+			}
+			return w, nil
+		case "done":
+			return w, tea.Quit
+		}
+		return w, nil
+
 	case tea.KeyPressMsg:
 		if msg.String() == "ctrl+c" {
 			return w, tea.Quit
@@ -177,24 +206,10 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case stepChoice:
 				if msg.String() == "enter" {
-					val := s.choice.selected()
-					if s.setter != nil {
-						if err := s.setter(val); err != nil {
-							w.errorMsg = err.Error()
-							return w, nil
-						}
-					}
-					w.errorMsg = ""
-					w.stepIdx++
-					if w.stepIdx >= len(w.steps) {
-						return w, w.gotoReview()
-					}
-					w.focusStep()
-					return w, nil
+					return w, w.doChoiceAdvance()
 				}
 				*s.choice = s.choice.update(msg)
 				return w, nil
-
 			case stepBody:
 				if msg.String() == "ctrl+o" {
 					return w, openInEditor(s.area.Value())
@@ -233,6 +248,7 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if w.stepIdx >= len(w.steps) {
 						return w, w.gotoReview()
 					}
+
 					w.focusStep()
 					return w, nil
 				}
@@ -276,6 +292,29 @@ func (w *wizardModel) gotoReview() tea.Cmd {
 	return nil
 }
 
+// doChoiceAdvance applies the current choice selection and moves to the
+// next step (or review). Used by both the enter key and mouse clicks.
+func (w *wizardModel) doChoiceAdvance() tea.Cmd {
+	s := w.current()
+	if s == nil || s.kind != stepChoice {
+		return nil
+	}
+	val := s.choice.selected()
+	if s.setter != nil {
+		if err := s.setter(val); err != nil {
+			w.errorMsg = err.Error()
+			return nil
+		}
+	}
+	w.errorMsg = ""
+	w.stepIdx++
+	if w.stepIdx >= len(w.steps) {
+		return w.gotoReview()
+	}
+	w.focusStep()
+	return nil
+}
+
 func (w *wizardModel) doFinish() tea.Cmd {
 	return func() tea.Msg {
 		err := w.finish(w)
@@ -284,6 +323,12 @@ func (w *wizardModel) doFinish() tea.Cmd {
 }
 
 func (w *wizardModel) View() tea.View {
+	v := w.viewContent()
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
+}
+
+func (w *wizardModel) viewContent() tea.View {
 	switch w.screen {
 	case "working":
 		return tea.NewView(lipgloss.JoinVertical(
@@ -310,7 +355,8 @@ func (w *wizardModel) View() tea.View {
 			lipgloss.Left,
 			AnimatedTitle(w.slide.X, "tofu"),
 			Accent.Render("✓ Done! "+w.doneMsg),
-			HelpFooter(w.opts),
+			"",
+			HelpStyle.Render("press enter to go back to the menu"),
 		))
 	}
 	footer := HelpFooter(w.opts)

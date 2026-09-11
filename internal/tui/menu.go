@@ -256,6 +256,38 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, cmd
 
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button != tea.MouseLeft {
+			return m, nil
+		}
+		if m.screen != screenList {
+			// any click on a viewport-ish screen pops back to the menu
+			if m.screen == screenViewport {
+				m.screen = screenList
+			}
+			return m, nil
+		}
+		// List rows start after the animated title row; item rows are
+		// single-line. Convert the click row into a cursor move, then
+		// activate if it was already selected.
+		row := msg.Mouse().Y - 2 // title row + list top offset
+		idx := m.list.Index()
+		if row >= 0 && row < len(menuItems(m.root)) {
+			m.list.Select(row)
+			if idx == row {
+				action, err := m.selectedAction()
+				if err == nil {
+					if action.needSite && !hasSite(m.root) {
+						m.errorMsg = "run New site first"
+						return m, nil
+					}
+					m.errorMsg = ""
+					return m, action.run(&m)
+				}
+			}
+		}
+		return m, nil
+
 	case tea.KeyPressMsg:
 		if msg.String() == "ctrl+c" {
 			if m.srv != nil {
@@ -356,21 +388,25 @@ func (m MenuModel) View() tea.View {
 			HelpFooter(m.opts),
 		))
 	case screenProgress:
-		return tea.NewView(lipgloss.JoinVertical(
+		v := tea.NewView(lipgloss.JoinVertical(
 			lipgloss.Left,
 			AnimatedTitle(m.slide.X, "tofu"),
 			m.spinnerM.view()+" "+m.progMsg,
 			m.prog.view(),
 		))
+		v.MouseMode = tea.MouseModeCellMotion
+		return v
 	}
 	footer := MenuFooter()
 	if m.errorMsg != "" {
 		footer = ErrorStyle.Render(m.errorMsg) + "\n" + footer
 	}
-	return tea.NewView(lipgloss.JoinVertical(
+	v := tea.NewView(lipgloss.JoinVertical(
 		lipgloss.Left,
 		AnimatedTitle(m.slide.X, "tofu"),
 		m.list.View(),
 		footer,
 	))
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
 }

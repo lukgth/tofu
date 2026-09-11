@@ -270,11 +270,11 @@ hr {
 
 .tag {
   display: inline-block;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-family: var(--font-main);
-  padding: 0.1rem 0.6rem;
-  margin-right: 0.35rem;
-  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  margin-right: 0.3rem;
+  border-radius: 3px;
   background-color: var(--primary);
   color: var(--link-color);
 }

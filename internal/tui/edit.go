@@ -114,6 +114,15 @@ func (m editPickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.table.SetWidth(msg.Width)
 		m.table.SetHeight(msg.Height - 6)
 		return m, nil
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button == tea.MouseLeft {
+			// Rows start after the animated title + header line.
+			row := msg.Mouse().Y - 3
+			if row >= 0 && row < len(m.table.Rows()) {
+				m.table.SetCursor(row)
+			}
+		}
+		return m, nil
 	case frameMsg:
 		var cmd tea.Cmd
 		if m.slide.Update(m.spring) {
@@ -142,12 +151,14 @@ func (m editPickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m editPickerModel) View() tea.View {
-	return tea.NewView(lipgloss.JoinVertical(
+	v := tea.NewView(lipgloss.JoinVertical(
 		lipgloss.Left,
 		AnimatedTitle(m.slide.X, "tofu edit"),
 		m.table.View(),
 		HelpFooter(m.opts),
 	))
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
 }
 
 // editFormModel prefills and edits title/date/tags/description/draft + body.
