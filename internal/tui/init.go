@@ -69,6 +69,25 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		w.opts.Width = msg.Width
 		return w, nil
+	case editorDoneMsg:
+		if msg.tmp != "" {
+			defer os.Remove(msg.tmp)
+		}
+		if msg.runErr != nil {
+			w.errorMsg = "editor failed: " + msg.runErr.Error()
+			return w, nil
+		}
+		data, err := os.ReadFile(msg.tmp)
+		if err != nil {
+			w.errorMsg = "editor failed: " + err.Error()
+			return w, nil
+		}
+		if s := w.current(); s != nil && s.kind == stepBody && s.area != nil {
+			s.area.SetValue(string(data))
+		}
+		w.errorMsg = ""
+		w.focusStep()
+		return w, nil
 
 	case frameMsg:
 		var cmd tea.Cmd
@@ -177,6 +196,9 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return w, nil
 
 			case stepBody:
+				if msg.String() == "ctrl+o" {
+					return w, openInEditor(s.area.Value())
+				}
 				if msg.String() == "enter" {
 					val := strings.TrimSpace(s.area.Value())
 					if s.setter != nil {
@@ -292,6 +314,9 @@ func (w *wizardModel) View() tea.View {
 		))
 	}
 	footer := HelpFooter(w.opts)
+	if s := w.current(); s != nil && s.kind == stepBody && w.opts.ShowHelp {
+		footer = HelpStyle.Render("enter next • esc back • ctrl+o $EDITOR • ctrl+c quit")
+	}
 	if w.errorMsg != "" {
 		footer = ErrorStyle.Render(w.errorMsg) + "\n" + footer
 	}
