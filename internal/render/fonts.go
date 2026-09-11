@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"tofu/web"
+	"github.com/lukgth/tofu/web"
 )
 
 // copyFonts copies embedded font files from web/static/fonts to

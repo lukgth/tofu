@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"tofu/internal/cli"
-	"tofu/internal/tui"
+	"github.com/lukgth/tofu/internal/cli"
+	"github.com/lukgth/tofu/internal/tui"
 )
 
 var version = "dev"

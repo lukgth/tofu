@@ -11,8 +11,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"tofu/internal/cli"
-	"tofu/internal/post"
+	"github.com/lukgth/tofu/internal/cli"
+	"github.com/lukgth/tofu/internal/post"
 )
 
 // RunEdit picks a post and edits it interactively.

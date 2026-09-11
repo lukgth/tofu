@@ -4,8 +4,8 @@ package site
 import (
 	"path/filepath"
 
-	"tofu/internal/config"
-	"tofu/internal/post"
+	"github.com/lukgth/tofu/internal/config"
+	"github.com/lukgth/tofu/internal/post"
 )
 
 type Site struct {

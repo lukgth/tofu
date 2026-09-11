@@ -1,4 +1,4 @@
-module tofu
+module github.com/lukgth/tofu
 
 go 1.25.0
 

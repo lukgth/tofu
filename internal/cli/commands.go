@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"tofu/internal/config"
-	"tofu/internal/post"
-	"tofu/internal/render"
+	"github.com/lukgth/tofu/internal/config"
+	"github.com/lukgth/tofu/internal/post"
+	"github.com/lukgth/tofu/internal/render"
 )
 
 // NewRoot builds the tofu command tree.

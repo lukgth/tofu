@@ -51,7 +51,7 @@ quits, `/` filters.
 
 ## Installation
 
-Requires Go 1.24+.
+Requires Go 1.25+.
 
 ```sh
 git clone https://github.com/lukgth/tofu
@@ -152,7 +152,15 @@ The full sample (every theme color, nav, homepage, code color schemes) is in
 
 ## Contributing
 
-Issues and PRs welcome. MIT license.
+Issues and PRs welcome. MIT license, see [LICENSE](LICENSE).
+
+## go install
+
+```sh
+go install github.com/lukgth/tofu/cmd/tofu@latest
+```
+
+(Needs the module live on GitHub; until then use the build steps above.)
 
 [Bubble Tea]: https://github.com/charmbracelet/bubbletea
 [Bubbles]: https://github.com/charmbracelet/bubbles

@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"tofu/internal/cli"
+	"github.com/lukgth/tofu/internal/cli"
 )
 
 // AddWizardFlags adds the shared TUI flags to a command.

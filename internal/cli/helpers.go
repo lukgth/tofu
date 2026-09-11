@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"tofu/internal/config"
-	"tofu/internal/post"
+	"github.com/lukgth/tofu/internal/config"
+	"github.com/lukgth/tofu/internal/post"
 )
 
 // IsTTY reports whether stdout is a terminal. Stdlib only.

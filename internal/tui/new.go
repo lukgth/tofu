@@ -10,7 +10,7 @@ import (
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 
-	"tofu/internal/cli"
+	"github.com/lukgth/tofu/internal/cli"
 )
 
 // RunNew is the new-post wizard.

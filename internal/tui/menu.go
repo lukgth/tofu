@@ -12,8 +12,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"tofu/internal/cli"
-	"tofu/internal/render"
+	"github.com/lukgth/tofu/internal/cli"
+	"github.com/lukgth/tofu/internal/render"
 )
 
 type screenKind int

@@ -19,10 +19,10 @@ import (
 	"github.com/yuin/goldmark-highlighting/v2"
 	extension "github.com/yuin/goldmark/extension"
 	rendererhtml "github.com/yuin/goldmark/renderer/html"
-	"tofu/internal/config"
-	"tofu/internal/post"
-	"tofu/internal/site"
-	"tofu/web"
+	"github.com/lukgth/tofu/internal/config"
+	"github.com/lukgth/tofu/internal/post"
+	"github.com/lukgth/tofu/internal/site"
+	"github.com/lukgth/tofu/web"
 )
 
 var md = goldmark.New(
