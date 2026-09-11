@@ -2,6 +2,9 @@
   --width: {{.Theme.Width}};
   --font-main: {{.Theme.FontMain}};
   --font-secondary: {{.Theme.FontSecondary}};
+  --font-header: {{.Theme.FontHeader}};
+  --font-header-style: {{.Theme.FontHeaderStyle}};
+  --font-header-weight: {{.Theme.FontHeaderWeight}};
   --font-scale: {{.Theme.FontScale}};
   --text-color: {{.Theme.Text}};
   --heading-color: {{.Theme.Text}};
@@ -101,6 +104,27 @@
   src: url("fonts/rubik-bold.ttf") format("truetype");
 }
 
+@font-face {
+  font-family: "Gelasio";
+  font-style: normal;
+  font-weight: 400;
+  src: url("fonts/gelasio-regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Gelasio";
+  font-style: italic;
+  font-weight: 400;
+  src: url("fonts/gelasio-italic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Gelasio";
+  font-style: normal;
+  font-weight: 700;
+  src: url("fonts/gelasio-bold.ttf") format("truetype");
+}
+
 *,
 *::before,
 *::after {
@@ -191,6 +215,9 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 2.5rem;
 }
 nav h2 {
+  font-family: var(--font-header, var(--font-secondary));
+  font-style: var(--font-header-style, normal);
+  font-weight: var(--font-header-weight, bold);
   color: var(--header-color);
 }
 

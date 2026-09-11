@@ -54,9 +54,12 @@ footer      = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
 | `width` | `47.5rem` | content column width |
 | `font_main` | `"Ioskeley Mono", ui-monospace, monospace` | used for code, `pre`, tags |
 | `font_secondary` | `"Rubik", sans-serif` | body text and all headings |
+| `font_header` | `"Georgia", "Gelasio", serif` | top header site title only |
+| `font_header_style` | `normal` | header title `font-style` (e.g. `italic`, `oblique`) |
+| `font_header_weight` | `bold` | header title `font-weight` (e.g. `400`, `bold`, `800`) |
 | `font_scale` | `1em` | base font size |
 
-Fonts named here must exist on the visitor's system or via your own `@font-face` in `custom.css`. The tofu theme self-hosts Rubik (regular/italic/bold) and Ioskeley Mono (regular/bold/italic) automatically — `assets-blog/fonts/` is populated at build time.
+Fonts named here must exist on the visitor's system or via your own `@font-face` in `custom.css`. The tofu theme self-hosts Rubik (regular/italic/bold), Ioskeley Mono (regular/bold/italic), and Gelasio (regular/italic/bold — a metric-compatible stand-in for Georgia, registered as the `"Gelasio"` family) automatically — `assets-blog/fonts/` is populated at build time.
 
 ### Colors (light mode)
 

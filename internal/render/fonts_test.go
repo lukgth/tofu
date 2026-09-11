@@ -36,6 +36,22 @@ func TestCopyFonts(t *testing.T) {
 		"ioskeley-bold.ttf",
 		"ioskeley-italic.ttf",
 	}
+	gelasio := []string{
+		"gelasio-regular.ttf",
+		"gelasio-bold.ttf",
+		"gelasio-italic.ttf",
+	}
+	for _, name := range gelasio {
+		dst := filepath.Join(outDir, "assets-blog", "fonts", name)
+		fi, err := os.Stat(dst)
+		if err != nil {
+			t.Errorf("missing font %s: %v", name, err)
+			continue
+		}
+		if fi.Size() < 10*1024 {
+			t.Errorf("font %s is only %d bytes (expected >= 10KB)", name, fi.Size())
+		}
+	}
 	for _, name := range ioskeley {
 		dst := filepath.Join(outDir, "assets-blog", "fonts", name)
 		fi, err := os.Stat(dst)

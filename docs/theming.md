@@ -39,6 +39,8 @@ Dark mode flips the same variables via `prefers-color-scheme`, plus a manual ove
 | use | knob | default |
 |---|---|---|
 | headings + body | `font_secondary` | Rubik (self-hosted: regular, italic, bold) |
+| top header site title | `font_header` | Georgia via Gelasio (self-hosted: regular, italic, bold) |
+| top header emphasis | `font_header_style`, `font_header_weight` | `normal` / `bold` — raw CSS values (e.g. `italic`, `800`) |
 | code, `pre`, tags | `font_main` | Ioskeley Mono (self-hosted: regular, bold, italic) |
 
 Self-hosted fonts are embedded in the binary and copied to `assets-blog/fonts/` at build time — zero external requests, works offline. To use your own fonts: point the knobs at any system/fallback stack and declare your own `@font-face` in `custom.css`.

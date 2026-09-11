@@ -87,6 +87,16 @@ func TestLoadDefaultsAndClamp(t *testing.T) {
 	if s.RecentCount != 20 {
 		t.Fatalf("recent_count 99 => %d, want 20", s.RecentCount)
 	}
+	s, err = Load(writeTemp(t, minimal))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Theme.FontHeader != "\"Georgia\", \"Gelasio\", serif" {
+		t.Fatalf("default font_header = %q", s.Theme.FontHeader)
+	}
+	if s.Theme.FontHeaderStyle != "normal" || s.Theme.FontHeaderWeight != "bold" {
+		t.Fatalf("default header style/weight = %q/%q", s.Theme.FontHeaderStyle, s.Theme.FontHeaderWeight)
+	}
 }
 
 func TestLoadFullSample(t *testing.T) {

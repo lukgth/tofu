@@ -18,7 +18,7 @@ func scaffoldSite(t *testing.T) string {
 			t.Fatal(err)
 		}
 	}
-	write("tofu.toml", "title = \"Test Site\"\nbase_url = \"https://example.com\"\nrecent_count = 5\nlanguage = \"en\"\ndescription = \"desc\"\nfooter = \"foot\"\n[homepage]\nheading = \"Welcome\"\nbody_file = \"content/home.md\"\n")
+	write("tofu.toml", "title = \"Test Site\"\nbase_url = \"https://example.com\"\nrecent_count = 5\nlanguage = \"en\"\ndescription = \"desc\"\nfooter = \"foot\"\n[theme]\nfont_header_style = \"italic\"\nfont_header_weight = \"400\"\n[homepage]\nheading = \"Welcome\"\nbody_file = \"content/home.md\"\n")
 	os.MkdirAll(filepath.Join(root, "content", "posts"), 0o755)
 	return root
 }
@@ -212,6 +212,25 @@ func TestSiteTitleHeader(t *testing.T) {
 		}
 		if !strings.Contains(c, "h1, h2, h3, h4, h5, h6 {\n  font-family: var(--font-secondary)") {
 			t.Error("style.css headings must use Rubik (--font-secondary)")
+		}
+	})
+	t.Run("style.css header title uses font_header", func(t *testing.T) {
+		css, err := os.ReadFile(filepath.Join(out, "assets-blog", "style.css"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := string(css)
+		if !strings.Contains(c, "nav h2 {\n  font-family: var(--font-header, var(--font-secondary));") {
+			t.Error("style.css nav h2 must use --font-header")
+		}
+		if !strings.Contains(c, `--font-header: "Georgia", "Gelasio", serif`) {
+			t.Errorf("style.css --font-header missing default; got: %.400s", c)
+		}
+		if !strings.Contains(c, "--font-header-style: italic") || !strings.Contains(c, "--font-header-weight: 400") {
+			t.Errorf("configured header style/weight not rendered; got: %.400s", c)
+		}
+		if !strings.Contains(c, `font-family: "Gelasio"`) {
+			t.Error("style.css missing Gelasio @font-face")
 		}
 	})
 }

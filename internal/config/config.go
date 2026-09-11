@@ -10,36 +10,39 @@ import (
 )
 
 type Theme struct {
-	Width           string `toml:"width"`
-	FontMain        string `toml:"font_main"`
-	FontSecondary   string `toml:"font_secondary"`
-	FontScale       string `toml:"font_scale"`
-	Background      string `toml:"background"`
-	Primary         string `toml:"primary"`
-	Secondary       string `toml:"secondary"`
-	Accent          string `toml:"accent"`
-	Blink           string `toml:"blink"`
-	CodeBG          string `toml:"code_bg"`
-	HeaderColor     string `toml:"header_color"`
-	Highlight       string `toml:"highlight"`
-	Text            string `toml:"text"`
-	Link            string `toml:"link"`
-	Visited         string `toml:"visited"`
-	Blockquote      string `toml:"blockquote"`
-	DarkBackground  string `toml:"dark_background"`
-	DarkPrimary     string `toml:"dark_primary"`
-	DarkSecondary   string `toml:"dark_secondary"`
-	DarkAccent      string `toml:"dark_accent"`
-	DarkCodeBG      string `toml:"dark_code_bg"`
-	DarkBlink       string `toml:"dark_blink"`
-	DarkHighlight   string `toml:"dark_highlight"`
-	DarkHeaderColor string `toml:"dark_header_color"`
-	DarkText        string `toml:"dark_text"`
-	DarkLink        string `toml:"dark_link"`
-	DarkVisited     string `toml:"dark_visited"`
-	CodeStyle       string `toml:"code_style"`
-	DarkCodeStyle   string `toml:"dark_code_style"`
-	DarkBlockquote  string `toml:"dark_blockquote"`
+	Width            string `toml:"width"`
+	FontMain         string `toml:"font_main"`
+	FontSecondary    string `toml:"font_secondary"`
+	FontHeader       string `toml:"font_header"`
+	FontHeaderStyle  string `toml:"font_header_style"`
+	FontHeaderWeight string `toml:"font_header_weight"`
+	FontScale        string `toml:"font_scale"`
+	Background       string `toml:"background"`
+	Primary          string `toml:"primary"`
+	Secondary        string `toml:"secondary"`
+	Accent           string `toml:"accent"`
+	Blink            string `toml:"blink"`
+	CodeBG           string `toml:"code_bg"`
+	HeaderColor      string `toml:"header_color"`
+	Highlight        string `toml:"highlight"`
+	Text             string `toml:"text"`
+	Link             string `toml:"link"`
+	Visited          string `toml:"visited"`
+	Blockquote       string `toml:"blockquote"`
+	DarkBackground   string `toml:"dark_background"`
+	DarkPrimary      string `toml:"dark_primary"`
+	DarkSecondary    string `toml:"dark_secondary"`
+	DarkAccent       string `toml:"dark_accent"`
+	DarkCodeBG       string `toml:"dark_code_bg"`
+	DarkBlink        string `toml:"dark_blink"`
+	DarkHighlight    string `toml:"dark_highlight"`
+	DarkHeaderColor  string `toml:"dark_header_color"`
+	DarkText         string `toml:"dark_text"`
+	DarkLink         string `toml:"dark_link"`
+	DarkVisited      string `toml:"dark_visited"`
+	CodeStyle        string `toml:"code_style"`
+	DarkCodeStyle    string `toml:"dark_code_style"`
+	DarkBlockquote   string `toml:"dark_blockquote"`
 }
 
 type NavItem struct {
@@ -89,6 +92,15 @@ func Load(path string) (Site, error) {
 	}
 	if s.RecentCount > 20 {
 		s.RecentCount = 20
+	}
+	if s.Theme.FontHeader == "" {
+		s.Theme.FontHeader = "\"Georgia\", \"Gelasio\", serif"
+	}
+	if s.Theme.FontHeaderStyle == "" {
+		s.Theme.FontHeaderStyle = "normal"
+	}
+	if s.Theme.FontHeaderWeight == "" {
+		s.Theme.FontHeaderWeight = "bold"
 	}
 	return s, nil
 }
