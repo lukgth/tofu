@@ -139,6 +139,46 @@ func TestBuildEmptyPosts(t *testing.T) {
 	}
 }
 
+func TestBuildHidesRecentWhenZero(t *testing.T) {
+	root := scaffoldSite(t)
+	// scaffoldSite writes recent_count = 5; flip it to the hide sentinel.
+	tomlPath := filepath.Join(root, "tofu.toml")
+	b, err := os.ReadFile(tomlPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	flipped := strings.Replace(string(b), "recent_count = 5", "recent_count = 0", 1)
+	if err := os.WriteFile(tomlPath, []byte(flipped), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	home := filepath.Join(root, "content", "home.md")
+	if err := os.WriteFile(home, []byte("just the body\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writePostFile(t, root, "p1.md", "title: P1\ndate: 2026-01-01\n")
+	writePostFile(t, root, "p2.md", "title: P2\ndate: 2026-01-02\n")
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+	idx, err := os.ReadFile(filepath.Join(out, "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(idx)
+	if !strings.Contains(s, "just the body") {
+		t.Error("home body missing from hidden index")
+	}
+	for _, banned := range []string{`<h1>recent posts</h1>`, `<ul class="blog-posts">`, "/articles/p", "no posts yet."} {
+		if strings.Contains(s, banned) {
+			t.Errorf("hidden index must not contain %q", banned)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(out, "articles", "index.html")); err != nil {
+		t.Error("blog output must still build when recents are hidden")
+	}
+}
+
 func TestBuildDuplicateSlugsFails(t *testing.T) {
 	root := scaffoldSite(t)
 	writePostFile(t, root, "a.md", "title: A\ndate: 2026-01-01\n")

@@ -10,7 +10,7 @@ author      = "Jane Doe"
 description = "A cute little blog" # meta description, feed description
 base_url    = "https://example.com" # used for feed links
 language    = "en"
-recent_count = 5                   # posts on the homepage (clamped 1–20)
+recent_count = 5                   # posts on the homepage; 0 hides them (else clamped 1–20)
 footer      = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
 ```
 
@@ -43,7 +43,7 @@ footer      = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
   body_file = "content/home.md" # markdown rendered as the homepage body
 ```
 
-- Empty/missing `home.md` never fails a build — the homepage just shows the recent-posts list.
+- Empty/missing `home.md` never fails a build — the homepage just shows the recent-posts list. Set `recent_count = 0` to hide the recent-posts list entirely; the homepage then shows only the rendered `home.md` (or just the header/footer if it's empty).
 
 ## `[theme]`
 
@@ -124,4 +124,4 @@ Text on top of these pills is fixed `#1d1530` for contrast (WCAG-checked) — no
 ## Strictness
 
 - Unknown top-level keys, unknown `[theme]` keys, unknown sections: **errors**.
-- `recent_count` clamps to 1–20 (0/negative → 5, >20 → 20).
+- `recent_count` clamps to 1–20; `0` hides the homepage recent-posts section, negatives → 5, `>20` → 20, key missing → 5.

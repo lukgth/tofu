@@ -67,7 +67,7 @@ The post page shows exactly one title, from frontmatter. If your body starts wit
 
 ## Homepage
 
-`content/home.md` is regular markdown. Everything you write renders at the top of the homepage, followed by the recent-posts list (count from `recent_count`).
+`content/home.md` is regular markdown. Everything you write renders at the top of the homepage, followed by the recent-posts list (count from `recent_count`). Set `recent_count = 0` to hide the recent-posts list entirely; the homepage then shows only `content/home.md`.
 
 ## Editing
 

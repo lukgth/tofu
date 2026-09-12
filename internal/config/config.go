@@ -73,7 +73,8 @@ type Site struct {
 	Homepage    Homepage `toml:"homepage"`
 }
 
-// Load parses a tofu.toml. Unknown keys are errors; recent_count clamps to 1..20 with default 5.
+// Load parses a tofu.toml. Unknown keys are errors; recent_count clamps to 1..20
+// with default 5, and an explicit 0 hides the homepage recents.
 func Load(path string) (Site, error) {
 	var s Site
 	b, err := os.ReadFile(path)
@@ -87,7 +88,9 @@ func Load(path string) (Site, error) {
 	if undecoded := md.Undecoded(); len(undecoded) > 0 {
 		return s, fmt.Errorf("unknown key %q in %s", undecoded[0], path)
 	}
-	if s.RecentCount <= 0 {
+	// An explicit 0 is the "hide homepage recents" sentinel; a missing key
+	// decodes as 0 too, so use metadata to tell them apart.
+	if s.RecentCount < 0 || !md.IsDefined("recent_count") {
 		s.RecentCount = 5
 	}
 	if s.RecentCount > 20 {

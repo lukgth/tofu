@@ -70,8 +70,8 @@ func TestLoadDefaultsAndClamp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.RecentCount != 5 {
-		t.Fatalf("recent_count 0 => %d, want 5", s.RecentCount)
+	if s.RecentCount != 0 {
+		t.Fatalf("recent_count 0 => %d, want 0 (hide sentinel)", s.RecentCount)
 	}
 	s, err = Load(writeTemp(t, "recent_count = -3\n"))
 	if err != nil {

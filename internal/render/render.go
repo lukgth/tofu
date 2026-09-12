@@ -387,14 +387,21 @@ func writeIndex(siteRoot string, s site.Site, base renderCtx, outDir string) err
 			homeHTML = MarkdownToHTML(string(b))
 		}
 	}
+	showRecent := s.Config.RecentCount != 0
+	var recent []entry
+	if showRecent {
+		recent = entries(take(s.Posts, s.Config.RecentCount))
+	}
 	data := struct {
-		Heading  string
-		HomeHTML template.HTML
-		Posts    []entry
+		Heading    string
+		HomeHTML   template.HTML
+		Posts      []entry
+		ShowRecent bool
 	}{
-		Heading:  s.Config.Homepage.Heading,
-		HomeHTML: template.HTML(homeHTML),
-		Posts:    entries(take(s.Posts, s.Config.RecentCount)),
+		Heading:    s.Config.Homepage.Heading,
+		HomeHTML:   template.HTML(homeHTML),
+		Posts:      recent,
+		ShowRecent: showRecent,
 	}
 	ctx := base
 	ctx.Title = s.Config.Homepage.Heading

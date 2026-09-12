@@ -26,7 +26,7 @@
 - all TUI goes through `internal/tui`: styles from `styles.go`, springs from `anim.go`, bubbles + lipgloss + harmonica only. no gum binary, no huh.
 - palette is purple + pink only: title `#C084FC`, accent `#F472B6`, dim/help `#B8A6E3`, error `#FB7185`, borders `#F472B6`/`#6D5A9E`, list header/cursor/selected `#E9D5FF`/`#C084FC`/`#F9A8D4`. progress uses `progress.WithDefaultBlend()`.
 - menu actions reuse the cli helpers (`InitScaffold`, `CreatePost`, `ListPosts`, `CountPosts`, `render.Build`) — never duplicate logic.
-- `recent_count` clamps to 1–20, default 5 (0 and negatives → 5, >20 → 20).
+- `recent_count` clamps to 1–20, default 5; `0` hides the homepage recents (negatives → 5, >20 → 20, missing → 5).
 - comments are minimal: only for non-obvious whys. no narration, no restating code.
 - TTY detection is stdlib only (`os.Stdout.Stat()` + `ModeCharDevice`), no isatty dep.
 - empty/missing `content/home.md` or `static/` never fails a build.
