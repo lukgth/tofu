@@ -12,8 +12,8 @@ yoursite/
 │   └── posts/               ← one .md per post
 │       ├── hello-tofu.md
 │       └── my-post.md
-├── assets-blog/
-│   └── custom.css           ← optional, loads after the theme
+├── assets-blog/             ← optional; create it to override the theme
+│   └── custom.css           ← loaded after style.css
 └── static/                  ← optional, copied to output root
     └── buttons/88x31.gif
 ```

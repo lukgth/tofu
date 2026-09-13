@@ -6,7 +6,7 @@ How the generated site looks and how to change it.
 
 1. **Theme defaults** (built in): Rubik body text, Ioskeley Mono code, purple/pink light theme, plum dark theme.
 2. **`tofu.toml` `[theme]`**: every color and font is a knob. See [configuration.md](configuration.md) for the full table.
-3. **`assets-blog/custom.css`**: loaded after `style.css`, wins over everything. Your escape hatch for anything the knobs don't cover.
+3. **`assets-blog/custom.css`** (optional — create the file to enable): loaded after `style.css`, wins over everything. Your escape hatch for anything the knobs don't cover.
 4. **`static/`**: raw files copied to the output root (buttons, images, fonts, favicon).
 
 ## Theme variables
@@ -80,7 +80,7 @@ home  blog            [theme toggle]
 
 ## Common customizations (custom.css recipes)
 
-Make images square-cornered:
+`tofu init` doesn't create `custom.css` — make `assets-blog/custom.css` yourself and drop rules in; it's linked automatically once the file exists. For example, make images square-cornered:
 
 ```css
 img { border-radius: 0; }

@@ -58,6 +58,7 @@ type renderCtx struct {
 	Content     template.HTML
 	Footer      string
 	BodyClass   string
+	CustomCSS   bool
 }
 
 type navLink struct {
@@ -119,9 +120,11 @@ func Build(siteRoot, outDir string, includeDrafts bool) error {
 	if err := copyFonts(outDir); err != nil {
 		return err
 	}
-	if err := copyCustomCSS(siteRoot, outDir); err != nil {
+	custom, err := copyCustomCSS(siteRoot, outDir)
+	if err != nil {
 		return err
 	}
+	base.CustomCSS = custom
 	if err := copyStatic(siteRoot, outDir); err != nil {
 		return err
 	}
@@ -177,6 +180,7 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 		Nav                                            []navLink
 		Content, Footer                                template.HTML
 		BodyClass                                      string
+		CustomCSS                                      bool
 	}{
 		Lang:        ctx.Lang,
 		Title:       ctx.Title,
@@ -187,6 +191,7 @@ func page(t *template.Template, frag string, data any, ctx renderCtx, dest strin
 		Content:     template.HTML(content.String()),
 		Footer:      template.HTML(ctx.Footer),
 		BodyClass:   ctx.BodyClass,
+		CustomCSS:   ctx.CustomCSS,
 	}
 	var out bytes.Buffer
 	if err := t.ExecuteTemplate(&out, "base.html", full); err != nil {
@@ -323,16 +328,21 @@ func pickChromaStyle(name, fallback string) *chroma.Style {
 	return styles.Get(fallback)
 }
 
-func copyCustomCSS(siteRoot, outDir string) error {
+// copyCustomCSS copies the optional custom.css into the output and reports
+// whether it was present, so pages only link a stylesheet that exists.
+func copyCustomCSS(siteRoot, outDir string) (bool, error) {
 	src := filepath.Join(siteRoot, "assets-blog", "custom.css")
 	b, err := os.ReadFile(src)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return false, nil
 		}
-		return err
+		return false, err
 	}
-	return write(filepath.Join(outDir, "assets-blog", "custom.css"), b)
+	if err := write(filepath.Join(outDir, "assets-blog", "custom.css"), b); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func copyStatic(siteRoot, outDir string) error {

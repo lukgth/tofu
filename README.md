@@ -35,7 +35,6 @@ post, `hello-tofu.md`.
 $ tofu init mysite
 created tofu.toml
 created content/home.md
-created assets-blog/custom.css
 created content/posts/hello-tofu.md
 done! try `tofu new` to write a post
 
@@ -144,7 +143,7 @@ The full sample (every theme color, nav, homepage, code color schemes) is in
 - Per-tag list pages, RSS feed, drafts
 - `==highlight==` markdown, raw HTML passthrough, footnotes
 - Syntax-highlighted code blocks with 60+ selectable color schemes
-- Everything configurable from `tofu.toml`; `assets-blog/custom.css` loads after the theme
+- Everything configurable from `tofu.toml`; drop an optional `assets-blog/custom.css` to override the theme
 
 ## Deploy
 

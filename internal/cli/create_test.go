@@ -61,11 +61,15 @@ func TestInitScaffold(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(created) < 4 {
-		t.Fatalf("expected 4 created files, got %v", created)
+	if len(created) != 3 {
+		t.Fatalf("expected 3 created files, got %v", created)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "tofu.toml")); err != nil {
 		t.Error("tofu.toml missing")
+	}
+	// custom.css is opt-in: init must not seed it.
+	if _, err := os.Stat(filepath.Join(dir, "assets-blog", "custom.css")); !os.IsNotExist(err) {
+		t.Error("init should not create assets-blog/custom.css")
 	}
 	// second init without force should refuse
 	if _, err := InitScaffold(dir, false); err == nil || !strings.Contains(err.Error(), "not empty") {

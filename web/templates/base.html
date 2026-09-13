@@ -15,6 +15,7 @@
     })();
   </script>
   <link rel="stylesheet" href="/assets-blog/style.css">
+  {{if .CustomCSS}}<link rel="stylesheet" href="/assets-blog/custom.css">{{end}}
 </head>
 <body{{if .BodyClass}} class="{{.BodyClass}}"{{end}}>
   <header>

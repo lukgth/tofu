@@ -59,7 +59,7 @@ footer      = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
 | `font_header_weight` | `bold` | header title `font-weight` (e.g. `400`, `bold`, `800`) |
 | `font_scale` | `1em` | base font size |
 
-Fonts named here must exist on the visitor's system or via your own `@font-face` in `custom.css`. The tofu theme self-hosts Rubik (regular/italic/bold), Ioskeley Mono (regular/bold/italic), and Gelasio (regular/italic/bold — a metric-compatible stand-in for Georgia, registered as the `"Gelasio"` family) automatically — `assets-blog/fonts/` is populated at build time.
+Fonts named here must exist on the visitor's system or via your own `@font-face` in a `custom.css` you add yourself. The tofu theme self-hosts Rubik (regular/italic/bold), Ioskeley Mono (regular/bold/italic), and Gelasio (regular/italic/bold — a metric-compatible stand-in for Georgia, registered as the `"Gelasio"` family) automatically — `assets-blog/fonts/` is populated at build time.
 
 ### Colors (light mode)
 

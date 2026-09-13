@@ -311,11 +311,31 @@ func TestBuildHomeBodyAndStaticCopy(t *testing.T) {
 	if !strings.Contains(string(idx), "<em>home body</em>") {
 		t.Error("home.md not rendered into index")
 	}
+	if !strings.Contains(string(idx), `href="/assets-blog/custom.css"`) {
+		t.Error("index does not link custom.css")
+	}
 	if _, err := os.Stat(filepath.Join(out, "assets-blog", "custom.css")); err != nil {
 		t.Error("custom.css not copied")
 	}
 	if _, err := os.Stat(filepath.Join(out, "pic.txt")); err != nil {
 		t.Error("static/ not copied")
+	}
+}
+
+// A site without assets-blog/custom.css must not link a stylesheet that
+// isn't there (it would 404).
+func TestCustomCSSLinkOnlyWhenPresent(t *testing.T) {
+	root := scaffoldSite(t)
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+	idx, err := os.ReadFile(filepath.Join(out, "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(idx), "custom.css") {
+		t.Error("index links custom.css though none exists")
 	}
 }
 

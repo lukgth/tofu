@@ -77,8 +77,6 @@ const sampleHome = "# hello!\n\nthis is your tofu site. edit `content/home.md` t
 
 const samplePost = "write your post here.\n"
 
-const sampleCustomCSS = "/* your custom styles, loaded after style.css */\n"
-
 // InitScaffold creates a new site in dir. Refuses non-empty dirs unless force.
 // Hidden dotfiles (.git, .DS_Store, ...) don't count as content: scaffolding
 // never overwrites existing files, so they're safe to scaffold alongside.
@@ -120,9 +118,6 @@ func InitScaffold(dir string, force bool) ([]string, error) {
 		created = append(created, "tofu.toml")
 	}
 	if err := mk("content/home.md", sampleHome); err != nil {
-		return nil, err
-	}
-	if err := mk("assets-blog/custom.css", sampleCustomCSS); err != nil {
 		return nil, err
 	}
 	today := time.Now().Format("2006-01-02")
