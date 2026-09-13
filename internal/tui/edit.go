@@ -27,7 +27,7 @@ func RunEdit(root, slug string, opts Options) error {
 	if err != nil {
 		return err
 	}
-	for {
+	for slug == "" {
 		m := newEditPicker(posts, isDark, o)
 		model, err := runProgram(m, o)
 		if err != nil {
@@ -48,7 +48,6 @@ func RunEdit(root, slug string, opts Options) error {
 			return nil
 		}
 		slug = picker.picked
-		break
 	}
 
 	path, err := postPathForSlug(root, slug)

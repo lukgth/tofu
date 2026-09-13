@@ -285,3 +285,20 @@ func TestWizardCommandsExposeFlags(t *testing.T) {
 		}
 	}
 }
+
+// RunEdit must use the slug it was given: an unknown slug errors before any
+// TUI starts, rather than silently falling through to the picker.
+func TestRunEditHonorsSlugArgument(t *testing.T) {
+	root := t.TempDir()
+	posts := filepath.Join(root, "content", "posts")
+	if err := os.MkdirAll(posts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(posts, "p.md"),
+		[]byte("---\ntitle: T\ndate: 2026-01-01\n---\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := RunEdit(root, "no-such-slug", normalize(Options{})); err == nil {
+		t.Fatal("RunEdit with an unknown slug should error, not open the picker")
+	}
+}

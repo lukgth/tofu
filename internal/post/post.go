@@ -18,6 +18,7 @@ type Frontmatter struct {
 	Title       string   `yaml:"title"`
 	Date        string   `yaml:"date"`
 	Description string   `yaml:"description,omitempty"`
+	Asset       string   `yaml:"asset,omitempty"`
 	Tags        []string `yaml:"tags,omitempty"`
 	Slug        string   `yaml:"slug,omitempty"`
 	Draft       bool     `yaml:"draft,omitempty"`
@@ -212,7 +213,7 @@ func UpdateFrontmatter(path string, mutate func(*Frontmatter) error) error {
 	}
 	for k, v := range current {
 		switch k {
-		case "title", "date", "description", "tags", "slug", "draft":
+		case "title", "date", "description", "asset", "tags", "slug", "draft":
 			continue
 		}
 		if _, ok := mergedMap[k]; !ok {

@@ -3,10 +3,13 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
+
+	"github.com/lukgth/tofu/internal/post"
 )
 
 func TestHeadlessCommandsRejectExtraArgs(t *testing.T) {
@@ -53,6 +56,45 @@ func TestCreatePostRejectsUnsafeSlug(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "escape.md")); err == nil {
 		t.Error("traversal slug created a file outside content/posts")
+	}
+}
+
+// Tags are free text; YAML-significant ones must be quoted or the frontmatter
+// stops parsing and every command fails on the whole site.
+func TestCreatePostQuotesYAMLTags(t *testing.T) {
+	root := t.TempDir()
+	if _, err := CreatePost(root, NewPostInput{
+		Title: "T", Date: "2026-01-01",
+		Tags: []string{"a: b", "*star", "#hash", "- dash"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := post.List(filepath.Join(root, "content"))
+	if err != nil {
+		t.Fatalf("tagged post does not parse back: %v", err)
+	}
+	want := []string{"a: b", "*star", "#hash", "- dash"}
+	if len(got) != 1 || !reflect.DeepEqual(got[0].Frontmatter.Tags, want) {
+		t.Fatalf("tags round-trip = %v, want %v", got[0].Frontmatter.Tags, want)
+	}
+}
+
+func TestCreatePostWritesAsset(t *testing.T) {
+	root := t.TempDir()
+	rel, err := CreatePost(root, NewPostInput{Title: "T", Date: "2026-01-01", AssetPath: "img/cover.png"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := os.ReadFile(filepath.Join(root, rel))
+	if !strings.Contains(string(b), `asset: "img/cover.png"`) {
+		t.Errorf("--asset not written to frontmatter:\n%s", b)
+	}
+	got, err := post.List(filepath.Join(root, "content"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Frontmatter.Asset != "img/cover.png" {
+		t.Errorf("asset did not round-trip: %+v", got)
 	}
 }
 

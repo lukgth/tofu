@@ -190,10 +190,16 @@ func CreatePost(root string, in NewPostInput) (string, error) {
 	if in.Description != "" {
 		fmt.Fprintf(&b, "description: %q\n", in.Description)
 	}
+	if in.AssetPath != "" {
+		fmt.Fprintf(&b, "asset: %q\n", in.AssetPath)
+	}
 	if len(in.Tags) > 0 {
 		b.WriteString("tags:\n")
 		for _, t := range in.Tags {
-			fmt.Fprintf(&b, "  - %s\n", t)
+			// %q: tags are free text and may contain YAML-significant
+			// characters (`a: b`, `*star`); raw, they corrupt the frontmatter
+			// and make the whole site unparseable.
+			fmt.Fprintf(&b, "  - %q\n", t)
 		}
 	}
 	if in.Draft {

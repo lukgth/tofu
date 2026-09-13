@@ -431,13 +431,13 @@ type slugDup struct {
 func duplicateSlugs(posts []post.Post) []slugDup {
 	seen := map[string]int{}
 	var dupes []slugDup
-	for _, p := range posts {
-		i, ok := seen[p.Slug]
+	for i, p := range posts {
+		j, ok := seen[p.Slug]
 		if !ok {
-			seen[p.Slug] = len(dupes)
+			seen[p.Slug] = i
 			continue
 		}
-		d := slugDup{slug: p.Slug, files: [2]string{posts[i].Frontmatter.Title, p.Frontmatter.Title}}
+		d := slugDup{slug: p.Slug, files: [2]string{posts[j].Frontmatter.Title, p.Frontmatter.Title}}
 		dupes = append(dupes, d)
 	}
 	return dupes

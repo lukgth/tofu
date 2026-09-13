@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/lukgth/tofu/internal/post"
 )
 
 func scaffoldSite(t *testing.T) string {
@@ -251,6 +253,30 @@ func TestBuildDuplicateSlugsFails(t *testing.T) {
 	err := Build(root, filepath.Join(t.TempDir(), "public"), false)
 	if err == nil || !strings.Contains(err.Error(), "duplicate slug") {
 		t.Fatalf("want duplicate slug error, got %v", err)
+	}
+}
+
+// The duplicate report must name the two colliding posts, not an unrelated
+// earlier post (the index bookkeeping once pointed at the wrong entry).
+func TestDuplicateSlugsNamesBothPosts(t *testing.T) {
+	posts := []post.Post{
+		{Frontmatter: post.Frontmatter{Title: "First A"}, Slug: "a"},
+		{Frontmatter: post.Frontmatter{Title: "First B"}, Slug: "b"},
+		{Frontmatter: post.Frontmatter{Title: "Second B"}, Slug: "b"},
+		{Frontmatter: post.Frontmatter{Title: "Second A"}, Slug: "a"},
+	}
+	dupes := duplicateSlugs(posts)
+	if len(dupes) != 2 {
+		t.Fatalf("got %d dupes, want 2", len(dupes))
+	}
+	want := map[string][2]string{
+		"b": {"First B", "Second B"},
+		"a": {"First A", "Second A"},
+	}
+	for _, d := range dupes {
+		if d.files != want[d.slug] {
+			t.Errorf("slug %q reported %v, want %v", d.slug, d.files, want[d.slug])
+		}
 	}
 }
 
