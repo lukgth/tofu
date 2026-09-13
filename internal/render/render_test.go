@@ -1,6 +1,7 @@
 package render
 
 import (
+	"encoding/xml"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -77,7 +78,7 @@ func TestBuildOutputTree(t *testing.T) {
 	}
 	for _, f := range []string{
 		"index.html", "articles/index.html", "articles/hello.html",
-		"assets-blog/style.css", "feed.xml",
+		"assets-blog/style.css", "assets-blog/theme-and-visited.js", "feed.xml",
 	} {
 		if _, err := os.Stat(filepath.Join(out, f)); err != nil {
 			t.Errorf("missing %s: %v", f, err)
@@ -94,8 +95,8 @@ func TestBuildOutputTree(t *testing.T) {
 	if !strings.Contains(string(css), "@font-face") || !strings.Contains(string(css), "Rubik") {
 		t.Error("style.css missing @font-face Rubik")
 	}
-	if !strings.Contains(string(css), ".title h1") || !strings.Contains(string(css), "display: none") {
-		t.Error("style.css missing .title h1 display:none")
+	if !strings.Contains(s, ".title {\n  font-family: var(--font-header, var(--font-secondary));") {
+		t.Error("style.css missing .title header-font rule")
 	}
 	if strings.Contains(string(css), "cursor-blink") {
 		t.Error("style.css must not have cursor-blink keyframes")
@@ -118,6 +119,67 @@ func TestFooterRendersHTML(t *testing.T) {
 	}
 	if !strings.Contains(string(idx), "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>") {
 		t.Errorf("footer link got escaped or lost: %.300s", idx)
+	}
+}
+
+// base.html must load behaviour from theme-and-visited.js rather than inline scripts;
+// the pre-paint theme boot is the only intentional exception.
+func TestScriptsAreExternal(t *testing.T) {
+	root := scaffoldSite(t)
+	writePostFile(t, root, "p.md", "title: P\ndate: 2026-01-01\n")
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+	idx, err := os.ReadFile(filepath.Join(out, "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(idx)
+	if !strings.Contains(s, `<script defer src="/assets-blog/theme-and-visited.js"></script>`) {
+		t.Error("index does not link the deferred theme-and-visited.js")
+	}
+	if strings.Contains(s, `getElementById("theme-toggle")`) {
+		t.Error("toggle logic must live in theme-and-visited.js, not inline")
+	}
+	if _, err := os.Stat(filepath.Join(out, "assets-blog", "theme-and-visited.js")); err != nil {
+		t.Error("theme-and-visited.js not emitted into assets-blog/")
+	}
+}
+
+// A channel description alone is not a feed: each post needs a real <item>
+// with title/link, and a stray </item> would make the XML ill-formed.
+func TestFeedEmitsItems(t *testing.T) {
+	root := scaffoldSite(t)
+	writePostFile(t, root, "p.md", "title: Hello & <World>\ndate: 2026-01-02\n")
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(out, "feed.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var feed struct {
+		Channel struct {
+			Items []struct {
+				Title string `xml:"title"`
+				Link  string `xml:"link"`
+			} `xml:"item"`
+		} `xml:"channel"`
+	}
+	if err := xml.Unmarshal(raw, &feed); err != nil {
+		t.Fatalf("feed.xml is not well-formed: %v\n%s", err, raw)
+	}
+	if len(feed.Channel.Items) != 1 {
+		t.Fatalf("feed has %d items, want 1", len(feed.Channel.Items))
+	}
+	it := feed.Channel.Items[0]
+	if it.Title != "Hello & <World>" {
+		t.Errorf("item title = %q, want escaped-then-decoded title", it.Title)
+	}
+	if it.Link != "https://example.com/articles/p.html" {
+		t.Errorf("item link = %q", it.Link)
 	}
 }
 
@@ -224,21 +286,21 @@ func TestSiteTitleHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := string(idx)
-	t.Run("index has site title h2 and squiggle", func(t *testing.T) {
-		if !strings.Contains(s, "<h2>Test Site</h2>") {
-			t.Errorf("index missing site title h2; got: %.400s", s)
+	t.Run("index has site title h1 and squiggle", func(t *testing.T) {
+		if !strings.Contains(s, `<h1 class="title"><a href="/">Test Site</a></h1>`) {
+			t.Errorf("index missing site title h1; got: %.400s", s)
 		}
 		if !strings.Contains(s, `class="squiggle"`) {
 			t.Error("index missing squiggle div")
 		}
 	})
-	t.Run("post page has site title h2 too", func(t *testing.T) {
+	t.Run("post page has site title h1 too", func(t *testing.T) {
 		html, err := os.ReadFile(filepath.Join(out, "articles", "p.html"))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(string(html), "<h2>Test Site</h2>") {
-			t.Error("post page missing site title h2")
+		if !strings.Contains(string(html), `<h1 class="title"><a href="/">Test Site</a></h1>`) {
+			t.Error("post page missing site title h1")
 		}
 	})
 	t.Run("style.css time rule is italic without monospace", func(t *testing.T) {
@@ -264,8 +326,8 @@ func TestSiteTitleHeader(t *testing.T) {
 			t.Fatal(err)
 		}
 		c := string(css)
-		if !strings.Contains(c, "nav h2 {\n  font-family: var(--font-header, var(--font-secondary));") {
-			t.Error("style.css nav h2 must use --font-header")
+		if !strings.Contains(c, ".title {\n  font-family: var(--font-header, var(--font-secondary));") {
+			t.Error("style.css .title must use --font-header")
 		}
 		if !strings.Contains(c, `--font-header: "Georgia", "Gelasio", serif`) {
 			t.Errorf("style.css --font-header missing default; got: %.400s", c)

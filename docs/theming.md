@@ -69,14 +69,20 @@ Unknown or empty names fall back to `github` / `github-dark`. Code block *backgr
 ## Header anatomy
 
 ```text
-[big site title h1 — hidden by CSS]
-tagline h2 (site title, Rubik, header_color) ← what visitors see
+site title h1 (header font, header_color, links home)
 ~~~~ squiggle divider (accent color) ~~~~
 home  blog            [theme toggle]
 ```
 
-- The visible header title is `header.title` (falls back to top-level `title`).
+- The header shows the site title once, as a single `h1.title` that links home (falls back from `header.title` to the top-level `title`).
 - The squiggle divider and the theme toggle button both use `--accent`.
+- Nav links are omitted when `[header.nav]` is empty; the toggle stays right-aligned either way.
+
+## Scripts
+
+Behaviour lives in `assets-blog/theme-and-visited.js` (one file, loaded with `defer`): the theme toggle and the visited-post italic styling. The only inline script is the ~5-line boot in `<head>` that applies a saved theme before first paint — it must run before render or the page would flash the wrong theme, so it can't be deferred to a file.
+
+`theme-and-visited.js` is regenerated on every build; persistent changes belong in `assets-blog/custom.css` (styling) rather than editing the emitted file.
 
 ## Common customizations (custom.css recipes)
 

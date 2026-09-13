@@ -117,6 +117,9 @@ func Build(siteRoot, outDir string, includeDrafts bool) error {
 	if err := write(filepath.Join(outDir, "assets-blog", "style.css"), styles); err != nil {
 		return err
 	}
+	if err := writeJS(outDir); err != nil {
+		return err
+	}
 	if err := copyFonts(outDir); err != nil {
 		return err
 	}
@@ -345,6 +348,16 @@ func copyCustomCSS(siteRoot, outDir string) (bool, error) {
 	return true, nil
 }
 
+// writeJS copies the embedded theme-and-visited.js (theme toggle + visited-post tracking)
+// to assets-blog/, where base.html links it with defer.
+func writeJS(outDir string) error {
+	b, err := web.Static.ReadFile("static/theme-and-visited.js")
+	if err != nil {
+		return err
+	}
+	return write(filepath.Join(outDir, "assets-blog", "theme-and-visited.js"), b)
+}
+
 func copyStatic(siteRoot, outDir string) error {
 	root := filepath.Join(siteRoot, "static")
 	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
@@ -538,12 +551,16 @@ func writeFeed(s site.Site, outDir string) error {
 	fmt.Fprintf(&buf, "<title>%s</title>\n", html.EscapeString(s.Config.Title))
 	fmt.Fprintf(&buf, "<link>%s</link>\n", html.EscapeString(base))
 	fmt.Fprintf(&buf, "<description>%s</description>\n", html.EscapeString(s.Config.Description))
-	latest := take(s.Posts, 20)
-	for _, p := range latest {
+	for _, p := range take(s.Posts, 20) {
+		link := base + "/articles/" + p.Slug + ".html"
+		buf.WriteString("<item>\n")
+		fmt.Fprintf(&buf, "<title>%s</title>\n", html.EscapeString(p.Frontmatter.Title))
+		fmt.Fprintf(&buf, "<link>%s</link>\n", html.EscapeString(link))
+		fmt.Fprintf(&buf, "<guid isPermaLink=\"true\">%s</guid>\n", html.EscapeString(link))
 		if !p.Date.IsZero() {
 			fmt.Fprintf(&buf, "<pubDate>%s</pubDate>\n", p.Date.UTC().Format(time.RFC1123Z))
 		}
-		fmt.Fprintf(&buf, "</item>\n")
+		buf.WriteString("</item>\n")
 	}
 	fmt.Fprintf(&buf, "</channel></rss>\n")
 	return write(filepath.Join(outDir, "feed.xml"), buf.Bytes())

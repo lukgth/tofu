@@ -4,27 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{{.Description}}">
-  <title>{{.Title}} - {{.SiteTitle}}</title>
+  <title>{{if and .Title (ne .Title .SiteTitle)}}{{.Title}} - {{end}}{{.SiteTitle}}</title>
   <meta name="color-scheme" content="light dark">
   <script>
+    // Inline on purpose: applies a saved theme before first paint so it never flashes.
     (function () {
-      var t = localStorage.getItem("theme");
-      if (t === "dark" || t === "light") {
-        document.querySelector('meta[name="color-scheme"]').content = t;
-      }
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "dark" || t === "light") {
+          document.querySelector('meta[name="color-scheme"]').content = t;
+        }
+      } catch (e) {}
     })();
   </script>
   <link rel="stylesheet" href="/assets-blog/style.css">
   {{if .CustomCSS}}<link rel="stylesheet" href="/assets-blog/custom.css">{{end}}
+  <script defer src="/assets-blog/theme-and-visited.js"></script>
 </head>
 <body{{if .BodyClass}} class="{{.BodyClass}}"{{end}}>
   <header>
-    <a class="title" href="/"><h1>{{.SiteTitle}}</h1></a>
+    <h1 class="title"><a href="/">{{.SiteTitle}}</a></h1>
     <nav>
-      <h2>{{.SiteTitle}}</h2>
       <div class="squiggle" aria-hidden="true"></div>
       <div class="nav-row">
-        <p>{{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}</p>
+        {{if .Nav}}<p>{{range .Nav}}<a href="{{.URL}}">{{.Label}}</a> {{end}}</p>{{end}}
         <button id="theme-toggle" aria-label="toggle dark mode"></button>
       </div>
     </nav>
@@ -33,42 +36,5 @@
     {{.Content}}
   </main>
   <footer>{{.Footer}}</footer>
-  <script>
-    (function () {
-      var meta = document.querySelector('meta[name="color-scheme"]');
-      var mq = window.matchMedia("(prefers-color-scheme: dark)");
-      var btn = document.getElementById("theme-toggle");
-      function current() {
-        if (meta.content === "dark") return "dark";
-        if (meta.content === "light") return "light";
-        return mq.matches ? "dark" : "light";
-      }
-      function paint() {
-        btn.textContent = current() === "dark" ? "\u2600" : "\u263e";
-      }
-      btn.addEventListener("click", function () {
-        var next = current() === "dark" ? "light" : "dark";
-        meta.content = next;
-        localStorage.setItem("theme", next);
-        paint();
-      });
-      mq.addEventListener("change", paint);
-      paint();
-    })();
-  </script>
-  <script>
-    (function () {
-      // Italicize visited post links. :visited can't set font-style
-      // (MDN: color properties only), and no JS API reads history, so
-      // track visits ourselves. localStorage is the simplest store.
-      var path = location.pathname;
-      if (path.startsWith("/articles/") && path.endsWith(".html") && !path.startsWith("/articles/tag/")) {
-        try { localStorage.setItem("v:" + path, 1); } catch (e) {}
-      }
-      document.querySelectorAll('ul.blog-posts a[href^="/articles/"]').forEach(function (a) {
-        try { if (localStorage.getItem("v:" + a.getAttribute("href"))) a.classList.add("visited-post"); } catch (e) {}
-      });
-    })();
-  </script>
 </body>
 </html>

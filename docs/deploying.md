@@ -15,6 +15,7 @@ public/
 ├── assets-blog/
 │   ├── style.css         ← theme (with your colors baked in)
 │   ├── custom.css        ← yours, if present
+│   ├── theme-and-visited.js           ← theme toggle + visited-post tracking
 │   └── fonts/            ← Rubik + Ioskeley Mono (self-hosted)
 ├── feed.xml              ← RSS 2.0
 └── …                     ← anything from your site's static/

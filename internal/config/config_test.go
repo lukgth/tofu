@@ -97,6 +97,9 @@ func TestLoadDefaultsAndClamp(t *testing.T) {
 	if s.Theme.FontHeaderStyle != "normal" || s.Theme.FontHeaderWeight != "bold" {
 		t.Fatalf("default header style/weight = %q/%q", s.Theme.FontHeaderStyle, s.Theme.FontHeaderWeight)
 	}
+	if s.Language != "en" {
+		t.Fatalf("default language = %q, want en", s.Language)
+	}
 }
 
 func TestLoadFullSample(t *testing.T) {

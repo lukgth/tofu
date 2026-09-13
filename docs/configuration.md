@@ -9,7 +9,7 @@ title       = "My Tofu Site"       # site name (feeds, titles)
 author      = "Jane Doe"
 description = "A cute little blog" # meta description, feed description
 base_url    = "https://example.com" # used for feed links
-language    = "en"
+language    = "en"                  # <html lang>; defaults to en
 recent_count = 5                   # posts on the homepage; 0 hides them (else clamped 1–20)
 footer      = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
 ```
@@ -32,7 +32,7 @@ footer      = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
     url = "/articles/"
 ```
 
-- `header.title` is displayed as the big header title (CSS hides the duplicate site-title link behind it).
+- `header.title` is the single header `h1` (falls back to the top-level `title`); it links home.
 - Nav labels are free text; use any casing you want.
 
 ## `[homepage]`

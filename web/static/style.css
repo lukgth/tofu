@@ -158,11 +158,22 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
   margin-top: 2.5rem;
 }
-nav h2 {
+
+.title {
   font-family: var(--font-header, var(--font-secondary));
   font-style: var(--font-header-style, normal);
   font-weight: var(--font-header-weight, bold);
   color: var(--header-color);
+  font-size: 2em;
+  margin: -0.625rem auto -0.1875rem auto;
+}
+
+.title a {
+  color: inherit;
+}
+
+.title a:hover {
+  transform: none;
 }
 
 h1 {
@@ -176,10 +187,6 @@ h2 {
 
 h3 {
   font-size: 1.2em;
-}
-
-.title h1 {
-  display: none;
 }
 
 .squiggle {
@@ -231,6 +238,7 @@ time {
   color: var(--link-color);
   border: unset;
   padding: unset;
+  margin-left: auto;
   cursor: pointer;
   transition: transform 0.3s ease;
 }

@@ -96,6 +96,9 @@ func Load(path string) (Site, error) {
 	if s.RecentCount > 20 {
 		s.RecentCount = 20
 	}
+	if s.Language == "" {
+		s.Language = "en"
+	}
 	if s.Theme.FontHeader == "" {
 		s.Theme.FontHeader = "\"Georgia\", \"Gelasio\", serif"
 	}
