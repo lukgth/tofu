@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
@@ -406,9 +407,13 @@ func newEditWizard(root, path string, o Options, isDark bool) (*wizardModel, err
 			return nil
 		}},
 		{kind: stepInput, label: "date", input: &dateIn, setter: func(v string) error {
-			if v != "" {
-				fm.Date = v
+			if v == "" {
+				return nil
 			}
+			if _, err := time.Parse("2006-01-02", v); err != nil {
+				return fmt.Errorf("bad date %q, want YYYY-MM-DD", v)
+			}
+			fm.Date = v
 			return nil
 		}},
 		{kind: stepInput, label: "tags", input: &tagsIn, setter: func(v string) error {

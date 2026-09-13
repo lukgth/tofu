@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/lukgth/tofu/internal/config"
@@ -142,6 +141,15 @@ func newEditCmd() *cobra.Command {
 				mutators = append(mutators, func(f *post.Frontmatter) error { f.Description = desc; return nil })
 				any = true
 			}
+			if cmd.Flags().Changed("date") {
+				if _, err := time.Parse("2006-01-02", date); err != nil {
+					if _, err2 := time.Parse(time.RFC3339, date); err2 != nil {
+						return fmt.Errorf("bad date %q (want YYYY-MM-DD)", date)
+					}
+				}
+				mutators = append(mutators, func(f *post.Frontmatter) error { f.Date = date; return nil })
+				any = true
+			}
 			if draftSet {
 				mutators = append(mutators, func(f *post.Frontmatter) error { f.Draft = draft; return nil })
 				any = true
@@ -179,8 +187,11 @@ func findPostBySlug(slug string) (string, error) {
 		return "", err
 	}
 	for _, p := range posts {
+		// Return the file we actually parsed: a post's frontmatter slug may
+		// differ from its filename, so rebuilding the path from the slug
+		// would miss the file (or hit a different one).
 		if p.Slug == slug {
-			return filepath.Join("content", "posts", filepath.Base(p.Slug+".md")), nil
+			return p.Path, nil
 		}
 	}
 	return "", fmt.Errorf("no post with slug %q", slug)

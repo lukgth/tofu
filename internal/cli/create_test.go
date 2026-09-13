@@ -55,6 +55,35 @@ func TestSlugFor(t *testing.T) {
 	}
 }
 
+func TestFindPostBySlugUsesRealPath(t *testing.T) {
+	root := t.TempDir()
+	posts := filepath.Join(root, "content", "posts")
+	if err := os.MkdirAll(posts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Frontmatter slug differs from the filename; the lookup must return the
+	// file it parsed, not content/posts/<slug>.md.
+	if err := os.WriteFile(filepath.Join(posts, "file-name.md"),
+		[]byte("---\ntitle: T\ndate: 2026-01-01\nslug: custom-name\n---\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chdir(wd) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	got, err := findPostBySlug("custom-name")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := filepath.Join("content", "posts", "file-name.md"); got != want {
+		t.Fatalf("path = %q, want %q", got, want)
+	}
+}
+
 func TestParseTags(t *testing.T) {
 	got := ParseTags("a, b ,,c")
 	if len(got) != 3 || got[0] != "a" || got[2] != "c" {

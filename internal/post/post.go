@@ -25,6 +25,7 @@ type Frontmatter struct {
 
 type Post struct {
 	Frontmatter
+	Path         string
 	Slug         string
 	Date         time.Time
 	BodyMarkdown string
@@ -59,6 +60,7 @@ func ParseFile(path string) (Post, error) {
 	if err != nil {
 		return p, err
 	}
+	p.Path = path
 	fm, body, err := splitFrontmatter(string(raw))
 	if err != nil {
 		return p, fmt.Errorf("%s: %w", path, err)
