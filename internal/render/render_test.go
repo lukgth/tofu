@@ -415,3 +415,51 @@ func TestMarkdownHardWraps(t *testing.T) {
 		t.Errorf("blank-line paragraphs broken: %q", got)
 	}
 }
+
+// Tags are untrusted frontmatter: a traversal-looking tag must not escape the
+// tag output directory, and the post's tag link must match the emitted file.
+func TestTagNamesAreSanitized(t *testing.T) {
+	root := scaffoldSite(t)
+	writePostFile(t, root, "p.md", "title: P\ndate: 2026-01-01\ntags: [\"../escape\", \"Hello World\"]\n")
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(out, "articles", "escape.html")); err == nil {
+		t.Error("tag ../escape escaped the tag directory")
+	}
+	post, err := os.ReadFile(filepath.Join(out, "articles", "p.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(post), `href="/articles/tag/escape.html"`) {
+		t.Errorf("post missing sanitized tag link: %.400s", post)
+	}
+	if !strings.Contains(string(post), `href="/articles/tag/hello-world.html">Hello World</a>`) {
+		t.Error("tag link should use the slug but keep the label")
+	}
+	for _, slug := range []string{"escape", "hello-world"} {
+		if _, err := os.Stat(filepath.Join(out, "articles", "tag", slug+".html")); err != nil {
+			t.Errorf("tag page %q missing", slug)
+		}
+	}
+}
+
+// A static/ symlink resolving outside the site must not leak into the output.
+func TestStaticSymlinkEscapeRejected(t *testing.T) {
+	root := scaffoldSite(t)
+	secret := filepath.Join(t.TempDir(), "secret.txt")
+	if err := os.WriteFile(secret, []byte("TOP SECRET\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "static"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(secret, filepath.Join(root, "static", "leak")); err != nil {
+		t.Skipf("symlinks unsupported: %v", err)
+	}
+	err := Build(root, filepath.Join(t.TempDir(), "public"), false)
+	if err == nil || !strings.Contains(err.Error(), "symlink") {
+		t.Fatalf("want symlink-escape error, got %v", err)
+	}
+}

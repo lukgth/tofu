@@ -92,6 +92,13 @@ func TestParseFileFrontmatterEdgeCases(t *testing.T) {
 	}
 }
 
+func TestParseFileRejectsUnsafeSlug(t *testing.T) {
+	_, err := ParseFile(writePost(t, t.TempDir(), "x.md", "---\ntitle: X\ndate: 2026-01-01\nslug: ../evil\n---\n"))
+	if err == nil || !contains(err.Error(), "invalid slug") {
+		t.Fatalf("want invalid slug error, got %v", err)
+	}
+}
+
 func TestParseFileBadDateNamesFile(t *testing.T) {
 	_, err := ParseFile(writePost(t, t.TempDir(), "x.md", "---\ntitle: X\ndate: not-a-date\n---\n"))
 	if err == nil || !contains(err.Error(), "x.md") || !contains(err.Error(), "not-a-date") {

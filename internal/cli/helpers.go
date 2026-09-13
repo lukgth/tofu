@@ -159,6 +159,9 @@ func SlugFor(in NewPostInput) string {
 // CreatePost writes content/posts/<slug>.md. Existing files error (use edit).
 func CreatePost(root string, in NewPostInput) (string, error) {
 	slug := SlugFor(in)
+	if !post.ValidSlug(slug) {
+		return "", fmt.Errorf("invalid slug %q", slug)
+	}
 	rel := filepath.Join("content", "posts", slug+".md")
 	path := filepath.Join(root, rel)
 	if _, err := os.Stat(path); err == nil {

@@ -42,6 +42,16 @@ func Slugify(s string) string {
 
 var dateFormats = []string{"2006-01-02", time.RFC3339}
 
+// ValidSlug reports whether s is safe as a single filename/URL component:
+// non-empty, not "." or "..", and free of path separators. A slug is used
+// verbatim as a filename (content/posts/<slug>.md, articles/<slug>.html),
+// so an unsanitized value could escape its directory.
+func ValidSlug(s string) bool {
+	return s != "" && s != "." && s != ".." &&
+		!strings.ContainsAny(s, `/\`) &&
+		filepath.Base(s) == s
+}
+
 // ParseFile reads a markdown file, splits leading YAML frontmatter, and fills defaults.
 func ParseFile(path string) (Post, error) {
 	var p Post
@@ -68,6 +78,9 @@ func ParseFile(path string) (Post, error) {
 	}
 	if slug == "" {
 		return p, fmt.Errorf("%s: empty slug after slugify", path)
+	}
+	if !ValidSlug(slug) {
+		return p, fmt.Errorf("%s: invalid slug %q", path, slug)
 	}
 	p.Slug = slug
 	p.BodyMarkdown = body

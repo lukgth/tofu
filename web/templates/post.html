@@ -1,4 +1,4 @@
 <h1>{{.Title}}</h1>
 <p><i><time datetime="{{.DateISO}}">{{.DatePretty}}</time></i></p>
 {{.BodyHTML}}
-{{if .Tags}}<p class="tags"><small>tags:</small> {{range .Tags}}<a class="tag" href="/articles/tag/{{.}}.html">{{.}}</a> {{end}}</p>{{end}}
+{{if .Tags}}<p class="tags"><small>tags:</small> {{range .Tags}}<a class="tag" href="/articles/tag/{{.Slug}}.html">{{.Label}}</a> {{end}}</p>{{end}}

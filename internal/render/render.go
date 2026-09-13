@@ -74,6 +74,28 @@ type entry struct {
 	Title      string
 }
 
+// tagLink is a tag's display label paired with the slug of its page.
+type tagLink struct {
+	Label string
+	Slug  string
+}
+
+// tagSlug maps a free-form tag to a filesystem/URL-safe slug. Tags come from
+// untrusted frontmatter, so they never reach the filesystem raw.
+func tagSlug(tag string) string { return post.Slugify(tag) }
+
+// tagLinks pairs each tag with its page slug, dropping tags with no safe slug
+// (all-punctuation) so links and generated pages stay in sync.
+func tagLinks(tags []string) []tagLink {
+	out := make([]tagLink, 0, len(tags))
+	for _, t := range tags {
+		if slug := tagSlug(t); slug != "" {
+			out = append(out, tagLink{Label: t, Slug: slug})
+		}
+	}
+	return out
+}
+
 func entries(posts []postItem) []entry {
 	out := make([]entry, 0, len(posts))
 	for _, p := range posts {
@@ -360,19 +382,36 @@ func writeJS(outDir string) error {
 
 func copyStatic(siteRoot, outDir string) error {
 	root := filepath.Join(siteRoot, "static")
-	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
-		if err != nil {
-			if os.IsNotExist(err) && p == root {
-				return nil
-			}
-			return err
+	resolvedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
 		}
-		rel, err := filepath.Rel(root, p)
+		return err
+	}
+	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
 			return nil
+		}
+		rel, err := filepath.Rel(root, p)
+		if err != nil {
+			return err
+		}
+		// WalkDir does not follow symlinks, but os.ReadFile would: a symlink
+		// resolving outside static/ would copy an arbitrary readable file
+		// into the output. Reject those; allow links within the tree.
+		if d.Type()&os.ModeSymlink != 0 {
+			target, err := filepath.EvalSymlinks(p)
+			if err != nil {
+				return err
+			}
+			if inside, err := filepath.Rel(resolvedRoot, target); err != nil ||
+				inside == ".." || strings.HasPrefix(inside, ".."+string(filepath.Separator)) {
+				return fmt.Errorf("static/%s: symlink escapes the static directory", rel)
+			}
 		}
 		b, err := os.ReadFile(p)
 		if err != nil {
@@ -463,10 +502,21 @@ func writeTagPages(s site.Site, base renderCtx, outDir string) error {
 	if err != nil {
 		return err
 	}
-	byTag := map[string][]entry{}
+	bySlug := map[string]*tagPage{}
+	var order []string
 	for _, p := range s.Posts {
 		for _, tag := range p.Frontmatter.Tags {
-			byTag[tag] = append(byTag[tag], entry{
+			slug := tagSlug(tag)
+			if slug == "" {
+				continue
+			}
+			tp := bySlug[slug]
+			if tp == nil {
+				tp = &tagPage{label: tag}
+				bySlug[slug] = tp
+				order = append(order, slug)
+			}
+			tp.posts = append(tp.posts, entry{
 				DateISO:    p.Date.Format("2006-01-02"),
 				DatePretty: p.Date.Format("02 Jan, 2006"),
 				Slug:       p.Slug,
@@ -474,19 +524,26 @@ func writeTagPages(s site.Site, base renderCtx, outDir string) error {
 			})
 		}
 	}
-	for tag, posts := range byTag {
+	for _, slug := range order {
+		tp := bySlug[slug]
 		ctx := base
-		ctx.Title = "posts tagged " + tag
+		ctx.Title = "posts tagged " + tp.label
 		data := struct {
 			Heading string
 			Posts   []entry
-		}{"posts tagged “" + tag + "”", posts}
-		dest := filepath.Join(outDir, "articles", "tag", tag+".html")
+		}{"posts tagged “" + tp.label + "”", tp.posts}
+		dest := filepath.Join(outDir, "articles", "tag", slug+".html")
 		if err := page(t, "posts.html", data, ctx, dest); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// tagPage collects the posts carrying one tag (by slug) and the label to show.
+type tagPage struct {
+	label string
+	posts []entry
 }
 
 func writePost(p post.Post, base renderCtx, outDir string) error {
@@ -503,13 +560,13 @@ func writePost(p post.Post, base renderCtx, outDir string) error {
 		Title      string
 		DateISO    string
 		DatePretty string
-		Tags       []string
+		Tags       []tagLink
 		BodyHTML   template.HTML
 	}{
 		Title:      p.Frontmatter.Title,
 		DateISO:    p.Date.Format("2006-01-02"),
 		DatePretty: p.Date.Format("02 Jan, 2006"),
-		Tags:       p.Frontmatter.Tags,
+		Tags:       tagLinks(p.Frontmatter.Tags),
 		BodyHTML:   template.HTML(stripDuplicateTitle(MarkdownToHTML(p.BodyMarkdown), p.Frontmatter.Title)),
 	}
 	return page(t, "post.html", data, ctx, filepath.Join(outDir, "articles", p.Slug+".html"))

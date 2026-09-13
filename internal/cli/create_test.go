@@ -32,6 +32,16 @@ func TestCreatePostAndCollision(t *testing.T) {
 	}
 }
 
+func TestCreatePostRejectsUnsafeSlug(t *testing.T) {
+	root := t.TempDir()
+	if _, err := CreatePost(root, NewPostInput{Title: "X", Slug: "../../escape"}); err == nil {
+		t.Fatal("want invalid slug error")
+	}
+	if _, err := os.Stat(filepath.Join(root, "escape.md")); err == nil {
+		t.Error("traversal slug created a file outside content/posts")
+	}
+}
+
 func TestSlugFor(t *testing.T) {
 	if got := SlugFor(NewPostInput{Title: "Café & Fun"}); got != "caf-fun" {
 		t.Errorf("slug from title = %q", got)
