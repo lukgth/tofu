@@ -463,3 +463,48 @@ func TestStaticSymlinkEscapeRejected(t *testing.T) {
 		t.Fatalf("want symlink-escape error, got %v", err)
 	}
 }
+
+// A leading body heading that repeats the title but carries inline markup must
+// still be stripped, so the post does not render two visible titles.
+func TestStripDuplicateTitleWithInlineMarkup(t *testing.T) {
+	root := scaffoldSite(t)
+	os.WriteFile(filepath.Join(root, "content", "posts", "dup.md"),
+		[]byte("---\ntitle: Hello\ndate: 2026-01-01\n---\n\n# *Hello*\n\ntext\n"), 0o644)
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(out, "articles", "dup.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Exactly two <h1>: the header site title and the post template's title.
+	if n := strings.Count(string(b), "<h1"); n != 2 {
+		t.Errorf("post has %d <h1>, want 2 (duplicate heading not stripped)", n)
+	}
+}
+
+// The font_scale knob and reduced-motion overrides must reach the output CSS.
+func TestCSSKnobsAndReducedMotion(t *testing.T) {
+	root := scaffoldSite(t)
+	out := filepath.Join(t.TempDir(), "public")
+	if err := Build(root, out, false); err != nil {
+		t.Fatal(err)
+	}
+	css, err := os.ReadFile(filepath.Join(out, "assets-blog", "style.css"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := string(css)
+	if !strings.Contains(c, "font-size: var(--font-scale") {
+		t.Error("font_scale knob is not consumed (no var(--font-scale) rule)")
+	}
+	i := strings.Index(c, "prefers-reduced-motion")
+	if i < 0 {
+		t.Fatal("missing prefers-reduced-motion block")
+	}
+	block := c[i:]
+	if !strings.Contains(block, "transition: none") || !strings.Contains(block, "transform: none") {
+		t.Error("reduced-motion must also disable hover transitions/transforms")
+	}
+}

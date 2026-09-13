@@ -29,8 +29,7 @@ func RunEdit(root, slug string, opts Options) error {
 	}
 	for {
 		m := newEditPicker(posts, isDark, o)
-		p := tea.NewProgram(m)
-		model, err := p.Run()
+		model, err := runProgram(tea.NewProgram(m), o)
 		if err != nil {
 			return err
 		}
@@ -78,8 +77,7 @@ func runFileBrowser(root string, o Options, isDark bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	p := tea.NewProgram(b)
-	model, err := p.Run()
+	model, err := runProgram(tea.NewProgram(b), o)
 	if err != nil {
 		return "", err
 	}

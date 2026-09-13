@@ -59,8 +59,7 @@ func runWizardProgram(w *wizardModel) error {
 	w.slide = NewSlide(8)
 	w.screen = "prompt"
 	w.focusStep()
-	p := tea.NewProgram(w)
-	_, err := p.Run()
+	_, err := runProgram(tea.NewProgram(w), w.opts)
 	return err
 }
 
@@ -477,10 +476,12 @@ func RunInit(root string, opts Options) error {
 		prog:     newProgressModel(o.Width - 8),
 		vp:       newViewport(o.Width, 14),
 		finish: func(w *wizardModel) error {
-			if err := config.Save(filepath.Join(w.root, "tofu.toml"), cfg); err != nil {
+			// Scaffold first: if it fails, no config is written, so a failed
+			// site creation leaves nothing partial behind.
+			if _, err := cli.InitScaffold(w.root, true); err != nil {
 				return err
 			}
-			if _, err := cli.InitScaffold(w.root, true); err != nil {
+			if err := config.Save(filepath.Join(w.root, "tofu.toml"), cfg); err != nil {
 				return err
 			}
 			w.doneMsg = "created " + w.root

@@ -33,6 +33,10 @@ type step struct {
 
 // normalize fills defaults for Options.
 func normalize(o Options) Options {
+	if o.NoColor {
+		// --no-color promises "no colors and animations".
+		o.NoAnimations = true
+	}
 	if o.CharLimit <= 0 {
 		o.CharLimit = 400
 	}

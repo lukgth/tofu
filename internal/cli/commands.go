@@ -27,6 +27,7 @@ func NewRoot() *cobra.Command {
 func newVersionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
+		Args:  cobra.NoArgs,
 		Short: "print the tofu version",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println(Version)
@@ -76,6 +77,7 @@ func newNewCmd() *cobra.Command {
 	var draft bool
 	cmd := &cobra.Command{
 		Use:   "new",
+		Args:  cobra.NoArgs,
 		Short: "create a new blog post",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			in := NewPostInput{
@@ -203,6 +205,7 @@ func newBuildCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "build",
 		Short: "render the site to the output directory",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := render.Build(".", out, drafts); err != nil {
 				return err
@@ -236,6 +239,7 @@ func newListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "list posts, newest first",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			posts, err := post.List("content")
 			if err != nil {
@@ -265,6 +269,7 @@ func newServeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "preview the built site locally",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if build {
 				if err := render.Build(".", out, false); err != nil {

@@ -5,7 +5,21 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
+
+func TestHeadlessCommandsRejectExtraArgs(t *testing.T) {
+	for _, c := range []*cobra.Command{newVersionCmd(), newNewCmd(), newBuildCmd(), newListCmd(), newServeCmd()} {
+		if c.Args == nil {
+			t.Errorf("%s has no Args validator", c.Name())
+			continue
+		}
+		if err := c.Args(c, []string{"stray"}); err == nil {
+			t.Errorf("%s should reject positional args", c.Name())
+		}
+	}
+}
 
 func TestCreatePostAndCollision(t *testing.T) {
 	root := t.TempDir()

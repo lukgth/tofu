@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	texttemplate "text/template"
 	"time"
@@ -572,6 +573,9 @@ func writePost(p post.Post, base renderCtx, outDir string) error {
 	return page(t, "post.html", data, ctx, filepath.Join(outDir, "articles", p.Slug+".html"))
 }
 
+// htmlTagRe matches HTML tags, used to compare a heading's visible text.
+var htmlTagRe = regexp.MustCompile(`<[^>]*>`)
+
 // stripDuplicateTitle removes a leading <h1> from the rendered body when it
 // merely repeats the frontmatter title — the post template already prints it.
 func stripDuplicateTitle(bodyHTML, title string) string {
@@ -583,7 +587,9 @@ func stripDuplicateTitle(bodyHTML, title string) string {
 	if end < 0 {
 		return bodyHTML
 	}
-	heading := strings.TrimSpace(html.UnescapeString(trimmed[4:end]))
+	// Compare the heading's visible text so inline markup (# *Hello*) still
+	// matches the plain-text title.
+	heading := strings.TrimSpace(html.UnescapeString(htmlTagRe.ReplaceAllString(trimmed[4:end], "")))
 	if strings.EqualFold(heading, strings.TrimSpace(title)) {
 		return trimmed[end+5:]
 	}

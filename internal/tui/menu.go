@@ -98,7 +98,7 @@ func runMenuOnce(root string, opts Options, initErr string) (tea.Model, error) {
 		slide:    NewSlide(8),
 		errorMsg: initErr,
 	}
-	return tea.NewProgram(m).Run()
+	return runProgram(tea.NewProgram(m), o)
 }
 
 func hasSite(root string) bool {

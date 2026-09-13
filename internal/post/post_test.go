@@ -99,6 +99,24 @@ func TestParseFileRejectsUnsafeSlug(t *testing.T) {
 	}
 }
 
+func TestUpdateFrontmatterPreservesBodyBytes(t *testing.T) {
+	dir := t.TempDir()
+	path := writePost(t, dir, "crlf.md", "---\r\ntitle: Old\r\ndate: 2026-01-01\r\n---\r\nline one\r\nline two\r\n")
+	if err := UpdateFrontmatter(path, func(f *Frontmatter) error { f.Title = "New"; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !contains(string(b), "line one\r\nline two\r\n") {
+		t.Errorf("body line endings not preserved: %q", b)
+	}
+	if !contains(string(b), "New") {
+		t.Errorf("title not updated: %q", b)
+	}
+}
+
 func TestParseFileBadDateNamesFile(t *testing.T) {
 	_, err := ParseFile(writePost(t, t.TempDir(), "x.md", "---\ntitle: X\ndate: not-a-date\n---\n"))
 	if err == nil || !contains(err.Error(), "x.md") || !contains(err.Error(), "not-a-date") {
