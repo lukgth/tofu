@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -13,7 +12,6 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/lukgth/tofu/internal/cli"
-	"github.com/lukgth/tofu/internal/config"
 )
 
 type spring interface {
@@ -59,7 +57,7 @@ func runWizardProgram(w *wizardModel) error {
 	w.slide = NewSlide(8)
 	w.screen = "prompt"
 	w.focusStep()
-	_, err := runProgram(tea.NewProgram(w), w.opts)
+	_, err := runProgram(w, w.opts)
 	return err
 }
 
@@ -476,12 +474,10 @@ func RunInit(root string, opts Options) error {
 		prog:     newProgressModel(o.Width - 8),
 		vp:       newViewport(o.Width, 14),
 		finish: func(w *wizardModel) error {
-			// Scaffold first: if it fails, no config is written, so a failed
-			// site creation leaves nothing partial behind.
-			if _, err := cli.InitScaffold(w.root, true); err != nil {
-				return err
-			}
-			if err := config.Save(filepath.Join(w.root, "tofu.toml"), cfg); err != nil {
+			// Scaffold with the wizard's config, which InitScaffoldWith writes
+			// last: if it fails, no tofu.toml is left behind, so a failed site
+			// creation leaves nothing that counts as a site.
+			if _, err := cli.InitScaffoldWith(w.root, true, cfg); err != nil {
 				return err
 			}
 			w.doneMsg = "created " + w.root

@@ -33,9 +33,9 @@ post, `hello-tofu.md`.
 
 ```sh
 $ tofu init mysite
-created tofu.toml
 created content/home.md
 created content/posts/hello-tofu.md
+created tofu.toml
 done! try `tofu new` to write a post
 
 $ tofu new --title "Hello World" --slug hello-world

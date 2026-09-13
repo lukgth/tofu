@@ -77,10 +77,18 @@ const sampleHome = "# hello!\n\nthis is your tofu site. edit `content/home.md` t
 
 const samplePost = "write your post here.\n"
 
-// InitScaffold creates a new site in dir. Refuses non-empty dirs unless force.
+// InitScaffold creates a new site in dir with the default config. Refuses
+// non-empty dirs unless force.
 // Hidden dotfiles (.git, .DS_Store, ...) don't count as content: scaffolding
 // never overwrites existing files, so they're safe to scaffold alongside.
 func InitScaffold(dir string, force bool) ([]string, error) {
+	return InitScaffoldWith(dir, force, DefaultConfig())
+}
+
+// InitScaffoldWith creates a new site in dir using cfg. tofu.toml is written
+// last, so a failure partway through leaves no site config behind (and thus no
+// half-created site that blocks a retry).
+func InitScaffoldWith(dir string, force bool, cfg config.Site) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	visible := 0
 	for _, e := range entries {
@@ -109,14 +117,6 @@ func InitScaffold(dir string, force bool) ([]string, error) {
 		created = append(created, rel)
 		return nil
 	}
-	cfg := DefaultConfig()
-	tomlPath := filepath.Join(dir, "tofu.toml")
-	if _, statErr := os.Stat(tomlPath); statErr != nil {
-		if err := config.Save(tomlPath, cfg); err != nil {
-			return nil, err
-		}
-		created = append(created, "tofu.toml")
-	}
 	if err := mk("content/home.md", sampleHome); err != nil {
 		return nil, err
 	}
@@ -124,6 +124,13 @@ func InitScaffold(dir string, force bool) ([]string, error) {
 	fm := fmt.Sprintf("---\ntitle: hello, tofu\ndate: %s\ndescription: your first tofu post\ntags:\n  - intro\n---\n\n%s", today, samplePost)
 	if err := mk(filepath.Join("content", "posts", "hello-tofu.md"), fm+"\n"); err != nil {
 		return nil, err
+	}
+	tomlPath := filepath.Join(dir, "tofu.toml")
+	if _, statErr := os.Stat(tomlPath); statErr != nil {
+		if err := config.Save(tomlPath, cfg); err != nil {
+			return nil, err
+		}
+		created = append(created, "tofu.toml")
 	}
 	return created, nil
 }

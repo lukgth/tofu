@@ -160,3 +160,40 @@ func TestInitScaffoldRefusesVisibleFiles(t *testing.T) {
 		t.Fatalf("want not-empty refusal, got %v", err)
 	}
 }
+
+func TestInitScaffoldWithUsesConfigAndWritesConfigLast(t *testing.T) {
+	dir := t.TempDir()
+	cfg := DefaultConfig()
+	cfg.Title = "Custom Site Title"
+	created, err := InitScaffoldWith(dir, false, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(created) == 0 || created[len(created)-1] != "tofu.toml" {
+		t.Errorf("tofu.toml must be created last, got %v", created)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "tofu.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), "Custom Site Title") {
+		t.Errorf("tofu.toml does not use the caller's config:\n%s", b)
+	}
+}
+
+// A failure partway through scaffolding must not leave a tofu.toml behind,
+// otherwise the half-created site would count as a site and block a retry.
+func TestInitScaffoldWithLeavesNoConfigOnFailure(t *testing.T) {
+	dir := t.TempDir()
+	// A regular file named "content" makes MkdirAll(content/) fail after the
+	// config would previously have been written.
+	if err := os.WriteFile(filepath.Join(dir, "content"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := InitScaffoldWith(dir, true, DefaultConfig()); err == nil {
+		t.Fatal("want scaffold failure")
+	}
+	if _, err := os.Stat(filepath.Join(dir, "tofu.toml")); !os.IsNotExist(err) {
+		t.Errorf("tofu.toml written despite scaffold failure (err=%v)", err)
+	}
+}

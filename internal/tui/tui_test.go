@@ -6,9 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
+	"github.com/spf13/cobra"
 )
 
 // enterKey builds a real enter press for driving wizard Update directly.
@@ -210,5 +212,76 @@ func TestSlideSettles(t *testing.T) {
 	}
 	if !s.Done || s.X != 0 {
 		t.Errorf("slide did not settle: done=%v x=%f", s.Done, s.X)
+	}
+}
+
+// A post whose frontmatter slug differs from its filename must resolve to the
+// file that was actually parsed, not content/posts/<slug>.md.
+func TestPostPathForSlugUsesRealPath(t *testing.T) {
+	root := t.TempDir()
+	posts := filepath.Join(root, "content", "posts")
+	if err := os.MkdirAll(posts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(posts, "file-name.md"),
+		[]byte("---\ntitle: T\ndate: 2026-01-01\nslug: custom-name\n---\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := postPathForSlug(root, "custom-name")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := filepath.Join(posts, "file-name.md"); got != want {
+		t.Fatalf("path = %q, want %q", got, want)
+	}
+	if _, err := os.Stat(got); err != nil {
+		t.Errorf("returned path does not exist: %v", err)
+	}
+}
+
+// The edit wizard prefills the date step from frontmatter, which ParseFile
+// accepts as RFC 3339; submitting that prefilled value must not error.
+func TestEditWizardDateAcceptsPrefilledRFC3339(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "p.md")
+	if err := os.WriteFile(path, []byte("---\ntitle: T\ndate: 2026-01-01T10:00:00Z\n---\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	w, err := newEditWizard(dir, path, normalize(Options{}), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range w.steps {
+		if s.label != "date" {
+			continue
+		}
+		if err := s.setter(s.input.Value()); err != nil {
+			t.Fatalf("prefilled RFC 3339 date rejected: %v", err)
+		}
+		return
+	}
+	t.Fatal("no date step found")
+}
+
+func TestAddWizardFlagsBindsOptions(t *testing.T) {
+	o := &Options{}
+	cmd := &cobra.Command{Use: "x", RunE: func(*cobra.Command, []string) error { return nil }}
+	AddWizardFlags(cmd, o)
+	cmd.SetArgs([]string{"--no-color", "--timeout", "5s"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !o.NoColor || o.Timeout != 5*time.Second {
+		t.Errorf("flags not bound: %+v", o)
+	}
+}
+
+// Flags must be registered when the command is constructed, not from RunE, or
+// cobra rejects them as unknown.
+func TestWizardCommandsExposeFlags(t *testing.T) {
+	for _, c := range WizardCommands() {
+		if c.Flags().Lookup("no-color") == nil || c.Flags().Lookup("timeout") == nil {
+			t.Errorf("%s does not expose the wizard flags", c.Name())
+		}
 	}
 }

@@ -29,7 +29,7 @@ func RunEdit(root, slug string, opts Options) error {
 	}
 	for {
 		m := newEditPicker(posts, isDark, o)
-		model, err := runProgram(tea.NewProgram(m), o)
+		model, err := runProgram(m, o)
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func runFileBrowser(root string, o Options, isDark bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	model, err := runProgram(tea.NewProgram(b), o)
+	model, err := runProgram(b, o)
 	if err != nil {
 		return "", err
 	}
@@ -256,8 +256,11 @@ func postPathForSlug(root, slug string) (string, error) {
 		return "", err
 	}
 	for _, p := range posts {
+		// Return the file we actually parsed: a post's frontmatter slug may
+		// differ from its filename, so rebuilding the path from the slug
+		// would miss the file (or hit a different one).
 		if p.Slug == slug {
-			return filepath.Join(root, "content", "posts", slug+".md"), nil
+			return p.Path, nil
 		}
 	}
 	return "", fmt.Errorf("no post with slug %q", slug)
@@ -408,8 +411,12 @@ func newEditWizard(root, path string, o Options, isDark bool) (*wizardModel, err
 			if v == "" {
 				return nil
 			}
+			// Accept the same formats as ParseFile/`tofu edit --date`; a
+			// frontmatter date may be RFC 3339 and is prefilled verbatim.
 			if _, err := time.Parse("2006-01-02", v); err != nil {
-				return fmt.Errorf("bad date %q, want YYYY-MM-DD", v)
+				if _, err2 := time.Parse(time.RFC3339, v); err2 != nil {
+					return fmt.Errorf("bad date %q, want YYYY-MM-DD", v)
+				}
 			}
 			fm.Date = v
 			return nil
