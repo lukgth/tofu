@@ -85,20 +85,26 @@ func parseDate(v string) (time.Time, error) {
 }
 
 func splitFrontmatter(src string) ([]byte, string, error) {
-	norm := strings.ReplaceAll(src, "\r\n", "\n")
+	norm := strings.TrimPrefix(strings.ReplaceAll(src, "\r\n", "\n"), "\ufeff")
 	if !strings.HasPrefix(norm, "---\n") {
 		return nil, "", fmt.Errorf("missing frontmatter")
 	}
 	rest := norm[4:]
-	end := strings.Index(rest, "\n---\n")
-	if end < 0 {
-		if strings.HasSuffix(rest, "\n---") {
-			end = len(rest) - 4
-		} else {
-			return nil, "", fmt.Errorf("missing frontmatter")
-		}
+	// Empty frontmatter: "---\n---\n" (body follows) or "---\n---" at EOF.
+	if strings.HasPrefix(rest, "---\n") {
+		return nil, rest[4:], nil
 	}
-	return []byte(rest[:end]), rest[end+len("\n---\n"):], nil
+	if rest == "---" {
+		return nil, "", nil
+	}
+	if end := strings.Index(rest, "\n---\n"); end >= 0 {
+		return []byte(rest[:end]), rest[end+len("\n---\n"):], nil
+	}
+	// Closing delimiter at EOF with no trailing newline: "---\n…\n---".
+	if strings.HasSuffix(rest, "\n---") {
+		return []byte(rest[:len(rest)-4]), "", nil
+	}
+	return nil, "", fmt.Errorf("missing frontmatter")
 }
 
 // List reads content/posts/*.md sorted date-descending, title-ascending tiebreak.

@@ -64,6 +64,34 @@ func TestParseFileMissingFrontmatter(t *testing.T) {
 	}
 }
 
+func TestParseFileFrontmatterEdgeCases(t *testing.T) {
+	dir := t.TempDir()
+	// Closing delimiter at EOF with no trailing newline must not panic.
+	p, err := ParseFile(writePost(t, dir, "eof.md", "---\ntitle: EOF\ndate: 2026-01-01\n---"))
+	if err != nil {
+		t.Fatalf("EOF delimiter: %v", err)
+	}
+	if p.Frontmatter.Title != "EOF" || p.BodyMarkdown != "" {
+		t.Fatalf("EOF delimiter: title=%q body=%q", p.Frontmatter.Title, p.BodyMarkdown)
+	}
+	// A leading UTF-8 BOM is ignored.
+	p, err = ParseFile(writePost(t, dir, "bom.md", "\ufeff---\ntitle: BOM\ndate: 2026-01-02\n---\nbody\n"))
+	if err != nil {
+		t.Fatalf("BOM: %v", err)
+	}
+	if p.Frontmatter.Title != "BOM" {
+		t.Fatalf("BOM: title=%q", p.Frontmatter.Title)
+	}
+	// Empty frontmatter is valid and keeps whatever body follows.
+	p, err = ParseFile(writePost(t, dir, "empty.md", "---\n---\nbody only\n"))
+	if err != nil {
+		t.Fatalf("empty frontmatter: %v", err)
+	}
+	if p.BodyMarkdown != "body only\n" {
+		t.Fatalf("empty frontmatter: body=%q", p.BodyMarkdown)
+	}
+}
+
 func TestParseFileBadDateNamesFile(t *testing.T) {
 	_, err := ParseFile(writePost(t, t.TempDir(), "x.md", "---\ntitle: X\ndate: not-a-date\n---\n"))
 	if err == nil || !contains(err.Error(), "x.md") || !contains(err.Error(), "not-a-date") {
