@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/lukgth/tofu/internal/config"
 	"github.com/lukgth/tofu/internal/post"
 )
@@ -144,14 +146,87 @@ type NewPostInput struct {
 	Description string
 	Draft       bool
 	Body        string
-	AssetPath   string
+	// Asset is any YAML value (string, mapping or sequence); it is written to
+	// the frontmatter verbatim, and may be a yaml fragment.
+	Asset any
+}
+
+// AssetNode is a NewPostInput asset supplied as raw YAML.
+type AssetNode struct{ Node *yaml.Node }
+
+// UnmarshalYAML lets CreatePost emit an arbitrary asset mapping or sequence.
+func (a AssetNode) UnmarshalYAML(n *yaml.Node) error { a.Node = n; return nil }
+
+// MarshalYAML emits the supplied node.
+func (a AssetNode) MarshalYAML() (any, error) {
+	if a.Node == nil {
+		return nil, nil
+	}
+	return a.Node, nil
+}
+
+// assetNode converts an input asset to a YAML node: an already-parsed value,
+// a raw YAML fragment (a string that reads as a mapping or sequence), or a
+// plain string. A string that does not parse as a document node keeps its
+// literal value.
+func assetNode(v any) (*yaml.Node, error) {
+	switch a := v.(type) {
+	case nil:
+		return nil, nil
+	case AssetNode:
+		return a.Node, nil
+	case *yaml.Node:
+		return a, nil
+	}
+	if s, ok := v.(string); ok {
+		// A fragment is raw YAML (mapping, sequence, multi-line); anything
+		// else is a literal path or name, which must be quoted so YAML
+		// punctuation in it cannot corrupt the frontmatter.
+		if strings.ContainsAny(s, "\n\r") || strings.Contains(s, ": ") {
+			var doc yaml.Node
+			if err := yaml.Unmarshal([]byte(s), &doc); err != nil {
+				return nil, fmt.Errorf("bad asset: %w", err)
+			}
+			if len(doc.Content) == 0 {
+				return nil, nil
+			}
+			return doc.Content[0], nil
+		}
+		// A quoted style keeps YAML-significant characters from ending the
+		// scalar early and corrupting the rest of the frontmatter.
+		return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: s, Style: yaml.DoubleQuotedStyle}, nil
+	}
+	var doc yaml.Node
+	if err := doc.Encode(v); err != nil {
+		return nil, fmt.Errorf("bad asset: %w", err)
+	}
+	if doc.Kind == yaml.DocumentNode {
+		if len(doc.Content) == 0 {
+			return nil, nil
+		}
+		return doc.Content[0], nil
+	}
+	return &doc, nil
+}
+
+// assetYAML renders an input asset for hand-written frontmatter.
+func assetYAML(v any) ([]byte, error) {
+	n, err := assetNode(v)
+	if err != nil {
+		return nil, err
+	}
+	if n == nil {
+		return nil, nil
+	}
+	return yaml.Marshal(map[string]any{"asset": n})
 }
 
 // SlugFor derives the slug for a new post: explicit slug, else slugified title,
-// else post-<date>.
+// else post-<date>. Every branch is slugified so the stored value and the
+// published URL are the same string.
 func SlugFor(in NewPostInput) string {
-	if in.Slug != "" {
-		return in.Slug
+	if s := post.NormalizeSlug(in.Slug); s != "" {
+		return s
 	}
 	if s := post.Slugify(in.Title); s != "" {
 		return s
@@ -165,6 +240,12 @@ func SlugFor(in NewPostInput) string {
 
 // CreatePost writes content/posts/<slug>.md. Existing files error (use edit).
 func CreatePost(root string, in NewPostInput) (string, error) {
+	// Reject a traversing explicit slug rather than quietly rewriting it: the
+	// author asked for a path escape, and normalizing it into a different post
+	// would be worse than refusing.
+	if in.Slug != "" && !post.ValidSlug(in.Slug) {
+		return "", fmt.Errorf("invalid slug %q", in.Slug)
+	}
 	slug := SlugFor(in)
 	if !post.ValidSlug(slug) {
 		return "", fmt.Errorf("invalid slug %q", slug)
@@ -173,6 +254,16 @@ func CreatePost(root string, in NewPostInput) (string, error) {
 	path := filepath.Join(root, rel)
 	if _, err := os.Stat(path); err == nil {
 		return "", fmt.Errorf("%s already exists; use `tofu edit` to change it", rel)
+	}
+	// The file name is not the only way a post claims a slug: a frontmatter
+	// `slug:` on another file publishes to the same articles/<slug>.html and
+	// overwrites it, so refuse before writing anything.
+	if owner, ok := post.SlugOwner(filepath.Join(root, "content"), slug); ok {
+		ownerRel, relErr := filepath.Rel(root, owner)
+		if relErr != nil {
+			ownerRel = owner
+		}
+		return "", fmt.Errorf("slug %q is already used by %s; use `tofu edit` to change it", slug, ownerRel)
 	}
 	date := in.Date
 	if date == "" {
@@ -190,8 +281,12 @@ func CreatePost(root string, in NewPostInput) (string, error) {
 	if in.Description != "" {
 		fmt.Fprintf(&b, "description: %q\n", in.Description)
 	}
-	if in.AssetPath != "" {
-		fmt.Fprintf(&b, "asset: %q\n", in.AssetPath)
+	if in.Asset != nil {
+		asset, err := assetYAML(in.Asset)
+		if err != nil {
+			return "", fmt.Errorf("%s: %w", rel, err)
+		}
+		b.Write(asset)
 	}
 	if len(in.Tags) > 0 {
 		b.WriteString("tags:\n")

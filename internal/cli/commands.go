@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/lukgth/tofu/internal/config"
@@ -88,7 +89,7 @@ func newNewCmd() *cobra.Command {
 				Description: desc,
 				Draft:       draft,
 				Body:        body,
-				AssetPath:   asset,
+				Asset:       asset,
 			}
 			if in.Title == "" {
 				in.Title = "Untitled"
@@ -107,7 +108,7 @@ func newNewCmd() *cobra.Command {
 	cmd.Flags().StringVar(&desc, "description", "", "post description")
 	cmd.Flags().StringVar(&date, "date", "", "post date, YYYY-MM-DD (default: today)")
 	cmd.Flags().StringVar(&body, "body", "", "markdown body (default: starter template)")
-	cmd.Flags().StringVar(&asset, "asset", "", "optional asset path to note in frontmatter")
+	cmd.Flags().StringVar(&asset, "asset", "", "asset path, or raw YAML (mapping/sequence) to note in frontmatter")
 	cmd.Flags().BoolVar(&draft, "draft", false, "mark the post as draft")
 	return cmd
 }
@@ -188,15 +189,20 @@ func findPostBySlug(slug string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	var matches []string
 	for _, p := range posts {
-		// Return the file we actually parsed: a post's frontmatter slug may
-		// differ from its filename, so rebuilding the path from the slug
-		// would miss the file (or hit a different one).
 		if p.Slug == slug {
-			return p.Path, nil
+			matches = append(matches, p.Path)
 		}
 	}
-	return "", fmt.Errorf("no post with slug %q", slug)
+	switch len(matches) {
+	case 0:
+		return "", fmt.Errorf("no post with slug %q", slug)
+	case 1:
+		return matches[0], nil
+	default:
+		return "", fmt.Errorf("slug %q is ambiguous in %s", slug, strings.Join(matches, ", "))
+	}
 }
 
 func newBuildCmd() *cobra.Command {
@@ -271,6 +277,11 @@ func newServeCmd() *cobra.Command {
 		Short: "preview the built site locally",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Validate before the optional build: a bad port must not spend
+			// time (or clobber the output) only to fail at listen time.
+			if port < 1 || port > 65535 {
+				return fmt.Errorf("invalid port %d (want 1-65535)", port)
+			}
 			if build {
 				if err := render.Build(".", out, false); err != nil {
 					return err

@@ -3,6 +3,7 @@ package post
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -165,6 +166,114 @@ func TestListMissingDirEmpty(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Fatalf("want empty, got %d", len(got))
+	}
+}
+
+// `asset` is free-form YAML: a string, a mapping, or a sequence must all parse
+// and re-emit unchanged instead of failing the whole site.
+func TestParseFileAssetShapes(t *testing.T) {
+	dir := t.TempDir()
+	cases := []struct {
+		name  string
+		fm    string
+		str   string
+		value any
+	}{
+		{"string", "asset: img/cover.png\n", "img/cover.png", "img/cover.png"},
+		{"mapping", "asset:\n  image:\n    src: a.png\n    alt: tofu\n", "", map[string]any{"image": map[string]any{"src": "a.png", "alt": "tofu"}}},
+		{"sequence", "asset:\n  - a.png\n  - b.png\n", "", []any{"a.png", "b.png"}},
+		{"quoted", "asset: \"a: b\"\n", "a: b", "a: b"},
+		{"absent", "", "", nil},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			src := "---\ntitle: T\ndate: 2026-01-01\n" + tc.fm + "---\nbody\n"
+			p, err := ParseFile(writePost(t, dir, tc.name+".md", src))
+			if err != nil {
+				t.Fatalf("parse: %v", err)
+			}
+			if got := p.Frontmatter.Asset.String(); got != tc.str {
+				t.Errorf("String() = %q, want %q", got, tc.str)
+			}
+			if !reflect.DeepEqual(p.Frontmatter.Asset.Any(), tc.value) {
+				t.Errorf("Any() = %#v, want %#v", p.Frontmatter.Asset.Any(), tc.value)
+			}
+		})
+	}
+}
+
+func TestUpdateFrontmatterPreservesAssetShape(t *testing.T) {
+	dir := t.TempDir()
+	for _, tc := range []struct{ name, src, want string }{
+		{"map", "asset:\n  src: a.png\n", "src: a.png"},
+		{"seq", "asset:\n  - a.png\n  - b.png\n", "- a.png"},
+		{"str", "asset: a.png\n", "asset: a.png"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(dir, tc.name+".md")
+			if err := os.WriteFile(path, []byte("---\ntitle: Old\ndate: 2026-01-01\n"+tc.src+"---\n\nbody\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := UpdateFrontmatter(path, func(f *Frontmatter) error { f.Title = "New"; return nil }); err != nil {
+				t.Fatal(err)
+			}
+			b, _ := os.ReadFile(path)
+			if !contains(string(b), tc.want) {
+				t.Errorf("asset shape not preserved:\n%s", b)
+			}
+			p, err := ParseFile(path)
+			if err != nil {
+				t.Fatalf("edited post does not parse: %v", err)
+			}
+			if p.Frontmatter.Asset.IsZero() {
+				t.Errorf("asset lost after edit:\n%s", b)
+			}
+		})
+	}
+}
+
+// An explicit slug is normalized so the file, the frontmatter and every link
+// agree; a traversing value is still rejected.
+func TestParseFileNormalizesExplicitSlug(t *testing.T) {
+	dir := t.TempDir()
+	p, err := ParseFile(writePost(t, dir, "raw.md", "---\ntitle: T\ndate: 2026-01-01\nslug: My Post!\n---\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Slug != "my-post" {
+		t.Fatalf("slug = %q, want my-post", p.Slug)
+	}
+	if p.Frontmatter.Slug != "My Post!" {
+		t.Errorf("frontmatter slug rewritten: %q", p.Frontmatter.Slug)
+	}
+	if _, err := ParseFile(writePost(t, dir, "esc.md", "---\ntitle: T\ndate: 2026-01-01\nslug: ../evil\n---\n")); err == nil {
+		t.Error("traversing slug accepted")
+	}
+}
+
+func TestSlugOwnerFindsFrontmatterSlug(t *testing.T) {
+	dir := t.TempDir()
+	posts := filepath.Join(dir, "posts")
+	if err := os.MkdirAll(posts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	owner := writePost(t, posts, "file-name.md", "---\ntitle: T\ndate: 2026-01-01\nslug: My Post\n---\n")
+	got, ok := SlugOwner(dir, "my-post")
+	if !ok || got != owner {
+		t.Fatalf("SlugOwner = %q, %v; want %q", got, ok, owner)
+	}
+	if _, ok := SlugOwner(dir, "other"); ok {
+		t.Error("SlugOwner claimed an unused slug")
+	}
+}
+
+func TestNormalizeSlug(t *testing.T) {
+	for in, want := range map[string]string{
+		"My Post!": "my-post", "Café": "caf", "already-fine": "already-fine", "..": "",
+	} {
+		if got := NormalizeSlug(in); got != want {
+			t.Errorf("NormalizeSlug(%q) = %q, want %q", in, got, want)
+		}
 	}
 }
 
