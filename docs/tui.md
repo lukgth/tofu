@@ -75,6 +75,13 @@ Browses `content/` with tofu's own name|date|size browser (directories first, no
 
 **Mouse**: click a row to select it.
 
+Files without frontmatter open a body-only form: the whole file is the text and
+is written back verbatim. A file that opens with `---` but has broken frontmatter
+is an error, not a plain file, so its metadata is never folded into its body.
+
+`tofu edit <slug>` resolves the slug to exactly one post; a slug two files claim
+reports the files instead of picking one, and a path is rejected as a slug.
+
 ### Edit form
 
 Prefilled from frontmatter: title, date, tags (comma-separated), description, then a body-mode choice (`Quick edit (textarea)` / `Open $EDITOR`) and the body step.
@@ -86,3 +93,6 @@ Prefilled from frontmatter: title, date, tags (comma-separated), description, th
 
 - Building shows a spinner + progress bar; errors return you to the wizard step that failed.
 - Preview starts a local static server (`public/`) and shows the URL; any key returns to the menu (the server keeps running until you quit tofu).
+
+If the preview port is taken, the build screen reports it and returns to the
+menu instead of showing a URL nothing is serving.

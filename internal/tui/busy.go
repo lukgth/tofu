@@ -47,7 +47,7 @@ func newProgressModel(width int) progressModel {
 	)}
 }
 
-func (p progressModel) setPercent(v float64) tea.Cmd { return p.m.SetPercent(v) }
+func (p *progressModel) setPercent(v float64) tea.Cmd { return p.m.SetPercent(v) }
 
 func (p *progressModel) updateFrame(msg progressFrameMsg) tea.Cmd {
 	m, cmd := p.m.Update(msg)

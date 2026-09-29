@@ -90,6 +90,10 @@ func (w *wizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		w.opts.Width = msg.Width
 		return w, nil
 	case editorDoneMsg:
+		// The scratch file is consumed here (read below, deleted on the way
+		// out), so it must leave the registry: a later ctrl+o in the same
+		// program would otherwise try to delete a path it no longer owns.
+		forgetTempFile(msg.tmp)
 		if msg.tmp != "" {
 			defer os.Remove(msg.tmp)
 		}
@@ -435,7 +439,12 @@ func RunInit(root string, opts Options) error {
 		return fmt.Errorf("a site already exists in %s (tofu.toml); edit it directly instead", root)
 	}
 	o := normalize(opts)
-	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+	return runWizardProgram(newInitWizard(root, o, lipgloss.HasDarkBackground(os.Stdin, os.Stdout)))
+}
+
+// newInitWizard builds the new-site wizard. Split out of RunInit so tests can
+// drive the real steps and finish without launching a terminal program.
+func newInitWizard(root string, o Options, isDark bool) *wizardModel {
 	titleIn := newTextInput("", "My Tofu Site", o)
 	authorIn := newTextInput("", "Jane Doe", o)
 	descIn := newTextInput("", "A cute little blog", o)
@@ -474,6 +483,15 @@ func RunInit(root string, opts Options) error {
 		prog:     newProgressModel(o.Width - 8),
 		vp:       newViewport(o.Width, 14),
 		finish: func(w *wizardModel) error {
+			// The title answered on step 1 is the site title everywhere it
+			// shows: DefaultConfig seeds the header with a copy of the
+			// default title, and the home nav link is a hardcoded "home"
+			// placeholder. Without this the new site would keep rendering
+			// the default name in the header.
+			cfg.Header.Title = cfg.Title
+			if len(cfg.Header.Nav) > 0 && cfg.Header.Nav[0].URL == "/" {
+				cfg.Header.Nav[0].Label = cfg.Title
+			}
 			// Scaffold with the wizard's config, which InitScaffoldWith writes
 			// last: if it fails, no tofu.toml is left behind, so a failed site
 			// creation leaves nothing that counts as a site.
@@ -494,5 +512,5 @@ func RunInit(root string, opts Options) error {
 			}, "\n")
 		},
 	}
-	return runWizardProgram(w)
+	return w
 }

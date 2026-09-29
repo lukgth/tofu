@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -15,6 +16,54 @@ import (
 type editorDoneMsg struct {
 	tmp    string
 	runErr error
+}
+
+// tempFiles tracks the editor scratch files a program is still holding, so
+// runProgram can drop them when the program ends for any reason (quit,
+// ctrl+c, or the --timeout abort). A body round trip that never reports back
+// — the timeout case — would otherwise leave the file in $TMPDIR forever.
+// Guarded by a mutex: the timeout timer and the wizard's Update both touch it.
+var (
+	tempMu    sync.Mutex
+	tempFiles = map[string]bool{}
+)
+
+// trackTempFile registers a scratch file for cleanup and returns it, so the
+// caller can register inline.
+func trackTempFile(path string) string {
+	if path == "" {
+		return path
+	}
+	tempMu.Lock()
+	tempFiles[path] = true
+	tempMu.Unlock()
+	return path
+}
+
+// forgetTempFile drops a scratch file that a round trip already consumed;
+// its content is either in the textarea or already gone.
+func forgetTempFile(path string) {
+	if path == "" {
+		return
+	}
+	tempMu.Lock()
+	delete(tempFiles, path)
+	tempMu.Unlock()
+}
+
+// removeTempFiles deletes every scratch file still registered. Called once a
+// program has stopped, so nothing is in use and a missing file is fine.
+func removeTempFiles() {
+	tempMu.Lock()
+	paths := make([]string, 0, len(tempFiles))
+	for p := range tempFiles {
+		paths = append(paths, p)
+	}
+	clear(tempFiles)
+	tempMu.Unlock()
+	for _, p := range paths {
+		_ = os.Remove(p)
+	}
 }
 
 type editorSelection struct {
@@ -184,6 +233,9 @@ func openInEditor(content string) tea.Cmd {
 		e := err
 		return func() tea.Msg { return editorDoneMsg{runErr: e} }
 	}
+	// Register before anything can fail or suspend: if the program ends
+	// without the round trip reporting back, runProgram still cleans up.
+	trackTempFile(tmp)
 	sel, err := resolveEditor(tmp)
 	if err != nil {
 		e := err

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,8 +18,9 @@ import (
 )
 
 // RunEdit picks a post and edits it interactively.
-// slug empty -> table picker first; "b" on the picker switches to browsing
-// content/ with the file picker (any .md, not just posts).
+// slug empty -> table picker first; ctrl+b on the picker switches to browsing
+// content/ with the file picker (any .md, not just posts). A slug given on the
+// command line must name exactly one post.
 func RunEdit(root, slug string, opts Options) error {
 	o := normalize(opts)
 	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
@@ -47,7 +49,9 @@ func RunEdit(root, slug string, opts Options) error {
 		if picker.picked == "" {
 			return nil
 		}
-		slug = picker.picked
+		// The picker already resolved the row to its file; a slug round trip
+		// here would be ambiguous exactly where it is least welcome.
+		return runEditForm(root, picker.picked, o, isDark)
 	}
 
 	path, err := postPathForSlug(root, slug)
@@ -249,27 +253,67 @@ func (m *fileBrowserModel) relDir() string {
 	return m.dir
 }
 
+// postPathForSlug resolves a slug to the file it was parsed from. A slug that
+// two files claim is ambiguous: picking either silently would edit the wrong
+// post, so the caller has to disambiguate. Slugs are not paths here, so an
+// absolute or relative path argument is a mistake, not a lookup.
 func postPathForSlug(root, slug string) (string, error) {
+	if pathish(slug) {
+		return "", fmt.Errorf("%q is a path, not a slug; browse to the file instead", slug)
+	}
 	posts, err := post.List(filepath.Join(root, "content"))
 	if err != nil {
 		return "", err
 	}
+	var matches []string
 	for _, p := range posts {
 		// Return the file we actually parsed: a post's frontmatter slug may
 		// differ from its filename, so rebuilding the path from the slug
 		// would miss the file (or hit a different one).
 		if p.Slug == slug {
-			return p.Path, nil
+			matches = append(matches, p.Path)
 		}
 	}
-	return "", fmt.Errorf("no post with slug %q", slug)
+	switch len(matches) {
+	case 0:
+		return "", fmt.Errorf("no post with slug %q", slug)
+	case 1:
+		return matches[0], nil
+	default:
+		return "", fmt.Errorf("slug %q is ambiguous: %s", slug, strings.Join(relativePaths(root, matches), ", "))
+	}
 }
 
-// editPickerModel is the date|slug|title table picker.
+// pathish reports whether a slug argument is really a filesystem path: an
+// absolute path, or one that walks up or down the tree.
+func pathish(s string) bool {
+	return filepath.IsAbs(s) || strings.ContainsAny(s, `/\`) || s == ".." ||
+		strings.HasPrefix(s, "../") || strings.HasPrefix(s, "./")
+}
+
+// relativePaths renders paths relative to root for error messages, falling
+// back to the absolute path when they are not under it.
+func relativePaths(root string, paths []string) []string {
+	out := make([]string, 0, len(paths))
+	for _, p := range paths {
+		if rel, err := filepath.Rel(root, p); err == nil {
+			out = append(out, rel)
+			continue
+		}
+		out = append(out, p)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// editPickerModel is the date|slug|title table picker. It carries the file
+// each row was parsed from, so a pick is a path and a duplicated slug never
+// has to be resolved again (ambiguously) downstream.
 type editPickerModel struct {
 	table  table.Model
 	opts   Options
 	picked string
+	paths  []string
 	done   bool
 	browse bool
 	slide  Slide
@@ -283,6 +327,7 @@ func newEditPicker(posts []post.Post, isDark bool, o Options) editPickerModel {
 		{Title: "title", Width: 36},
 	}
 	rows := make([]table.Row, 0, len(posts))
+	paths := make([]string, 0, len(posts))
 	for _, p := range posts {
 		date := p.Date.Format("2006-01-02")
 		if p.Date.IsZero() {
@@ -293,6 +338,7 @@ func newEditPicker(posts []post.Post, isDark bool, o Options) editPickerModel {
 			title += " (draft)"
 		}
 		rows = append(rows, table.Row{date, p.Slug, title})
+		paths = append(paths, p.Path)
 	}
 	t := table.New(
 		table.WithColumns(cols),
@@ -304,6 +350,7 @@ func newEditPicker(posts []post.Post, isDark bool, o Options) editPickerModel {
 	return editPickerModel{
 		table:  t,
 		opts:   o,
+		paths:  paths,
 		spring: NewSlideSpring(),
 		slide:  NewSlide(8),
 	}
@@ -341,8 +388,10 @@ func (m editPickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.done = true
 			return m, tea.Quit
 		case "enter":
-			if row := m.table.SelectedRow(); row != nil && len(row) > 1 {
-				m.picked = row[1]
+			// The row carries the file it was parsed from, so two posts
+			// sharing a slug are still distinct picks.
+			if i := m.table.Cursor(); i >= 0 && i < len(m.paths) {
+				m.picked = m.paths[i]
 			}
 			m.done = true
 			return m, tea.Quit
@@ -380,11 +429,19 @@ type editFormModel struct {
 
 // newEditWizard builds the edit-form wizard model. Split out of runEditForm
 // so tests can drive the real steps/finish/execFinish closures through
-// wizardModel.Update without launching a terminal program. Returns a nil
-// model when the file does not parse.
+// wizardModel.Update without launching a terminal program.
+//
+// A .md file that is not a post at all (content/notes/scratch.md) opens
+// body-only: the whole file is the text, and writing it back must not
+// invent frontmatter for it. A file that does claim frontmatter but has
+// broken YAML is an error, not a plain file — silently treating it as
+// body-only would hide the file's metadata inside its own body.
 func newEditWizard(root, path string, o Options, isDark bool) (*wizardModel, error) {
 	p, err := post.ParseFile(path)
 	if err != nil {
+		if errors.Is(err, post.ErrNoFrontmatter) {
+			return newPlainMarkdownWizard(root, path, o, isDark)
+		}
 		return nil, err
 	}
 
@@ -513,6 +570,129 @@ func newEditWizard(root, path string, o Options, isDark bool) (*wizardModel, err
 				"date: " + fm.Date,
 				"tags: " + strings.Join(fm.Tags, ", "),
 				"description: " + fm.Description,
+			}
+			if editorWanted {
+				sel, _ := resolveEditor(path)
+				switch {
+				case sel.err != nil:
+					lines = append(lines, "editor: "+sel.err.Error())
+				case sel.needSelection:
+					lines = append(lines, "editor: select-editor will ask (opens after confirm)")
+				default:
+					name := editorDisplayName()
+					if sel.fromSource != "" {
+						lines = append(lines, "editor: "+name+" (from "+sel.fromSource+", opens after confirm)")
+					} else {
+						lines = append(lines, "editor: "+name+" (opens after confirm)")
+					}
+				}
+			}
+			return strings.Join(lines, "\n")
+		},
+	}
+	w.repickEditor = func() tea.Cmd {
+		return runSelectEditorCmd(path, func(s2 editorSelection) tea.Msg {
+			if s2.err != nil {
+				return editorRepickErrorMsg{err: s2.err}
+			}
+			if s2.cmd == nil || len(s2.cmd.Args) == 0 {
+				return editorRepickErrorMsg{err: fmt.Errorf("no editor selected")}
+			}
+			args := s2.cmd.Args
+			if n := len(args); n > 0 && args[n-1] == path {
+				args = args[:n-1]
+			}
+			if len(args) == 0 {
+				return editorRepickErrorMsg{err: fmt.Errorf("no editor selected")}
+			}
+			setSessionEditor(strings.Join(args, " "))
+			return editorRepickedMsg{}
+		}, true)
+	}
+	return w, nil
+}
+
+// newPlainMarkdownWizard is the edit form for a .md file with no
+// frontmatter: one body step, and a finish that writes the textarea back to
+// the file verbatim. The same body-mode choice as a post is offered so
+// $EDITOR works for long notes.
+func newPlainMarkdownWizard(root, path string, o Options, isDark bool) (*wizardModel, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	body := newBodyArea(string(raw), o)
+	editorChoice := newChoice([]string{"Quick edit (textarea)", "Open $EDITOR"}, isDark, o.Width)
+
+	editorWanted := false
+	steps := []step{
+		{kind: stepChoice, label: "body", choice: &editorChoice, setter: func(v string) error {
+			editorWanted = strings.HasPrefix(v, "Open")
+			return nil
+		}, branch: func(w *wizardModel) tea.Cmd {
+			if editorWanted {
+				return w.gotoReview()
+			}
+			w.stepIdx++
+			w.focusStep()
+			return nil
+		}},
+		{kind: stepBody, label: "body (textarea)", area: &body, setter: func(string) error {
+			return nil
+		}},
+	}
+
+	w := &wizardModel{
+		root:     root,
+		opts:     o,
+		title:    "edit " + filepath.Base(path),
+		isDark:   isDark,
+		spring:   NewSlideSpring(),
+		steps:    steps,
+		spinnerM: newSpinnerModel(),
+		prog:     newProgressModel(o.Width - 8),
+		vp:       newViewport(o.Width, 14),
+		finish: func(w *wizardModel) error {
+			if !editorWanted {
+				return os.WriteFile(path, []byte(body.Value()), 0o644)
+			}
+			return nil
+		},
+		execFinish: func(w *wizardModel) tea.Cmd {
+			// The editor writes the file itself; the textarea leg already ran
+			// the finish, so it only has to report.
+			if !editorWanted {
+				err := w.finish(w)
+				return func() tea.Msg { return wizardQuitMsg{err: err} }
+			}
+			sel, err := resolveEditor(path)
+			if err != nil {
+				return func() tea.Msg { return wizardQuitMsg{err: err} }
+			}
+			done := func(runErr error) tea.Msg {
+				if runErr != nil {
+					return wizardQuitMsg{err: fmt.Errorf("editor failed: %w", runErr)}
+				}
+				return wizardQuitMsg{}
+			}
+			if sel.needSelection {
+				return runSelectEditorCmd(path, func(s2 editorSelection) tea.Msg {
+					if s2.err != nil {
+						return wizardQuitMsg{err: s2.err}
+					}
+					if s2.cmd == nil {
+						return wizardQuitMsg{err: fmt.Errorf("no editor selected")}
+					}
+					return execEditorMergeMsg{cmd: s2.cmd, followUp: done}
+				}, false)
+			}
+			return tea.ExecProcess(sel.cmd, done)
+		},
+		summary: func(w *wizardModel) string {
+			lines := []string{
+				Title.Render("review"),
+				"file: " + path,
+				"frontmatter: none (whole file is the body)",
 			}
 			if editorWanted {
 				sel, _ := resolveEditor(path)

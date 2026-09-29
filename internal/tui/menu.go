@@ -2,9 +2,12 @@ package tui
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"charm.land/bubbles/v2/key"
@@ -48,8 +51,13 @@ type MenuModel struct {
 	errorMsg string
 	width    int
 	height   int
-	srv      *http.Server
-	wizard   func(root string, o Options) error
+	// srv is the preview server, ln its listener. Closing an http.Server
+	// closes the listener it was handed, and the OS holds that port until
+	// the close lands, so rebinding and stopping go through ln.Close: a
+	// second Preview can take the same port back immediately.
+	srv    *http.Server
+	ln     net.Listener
+	wizard func(root string, o Options) error
 }
 
 type viewportDoneMsg struct{}
@@ -171,6 +179,9 @@ func (m *MenuModel) runBuild() tea.Cmd {
 	})
 }
 
+// runServe builds the site; the listener is bound by the progress screen
+// itself once the build reports success, so the server belongs to the model
+// that carries it into the preview screen.
 func (m *MenuModel) runServe() tea.Cmd {
 	return m.runTask("building for preview", func() error {
 		return render.Build(m.root, filepath.Join(m.root, "public"), false)
@@ -190,9 +201,7 @@ func (m *MenuModel) runList() tea.Cmd {
 }
 
 func (m *MenuModel) runQuit() tea.Cmd {
-	if m.srv != nil {
-		m.srv.Close()
-	}
+	m.stopServe()
 	return tea.Quit
 }
 
@@ -220,12 +229,15 @@ func (m *MenuModel) runWizard(fn func(root string, o Options) error) tea.Cmd {
 	return tea.Quit
 }
 
+// joinLines renders list lines for the viewport: one trailing newline each,
+// so the last line is not glued to the frame edge.
 func joinLines(lines []string) string {
-	out := ""
+	var b strings.Builder
 	for _, l := range lines {
-		out += l + "\n"
+		b.WriteString(l)
+		b.WriteByte('\n')
 	}
-	return out
+	return b.String()
 }
 
 func (m MenuModel) Init() tea.Cmd {
@@ -238,10 +250,13 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		// The menu is a short single-line-item list; keep it content-sized
-		// instead of stretching to the full terminal height.
+		// instead of stretching to the full terminal height. The floor keeps
+		// the list positive: a very short terminal (or a window the size of
+		// the message itself) would otherwise ask the list to paginate into
+		// negative space.
 		h := len(menuActions()) + 10
-		if h > msg.Height-5 {
-			h = msg.Height - 5
+		if lim := msg.Height - 5; h > lim {
+			h = max(lim, 1)
 		}
 		m.list.SetSize(msg.Width, h)
 		return m, nil
@@ -290,9 +305,7 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		if msg.String() == "ctrl+c" {
-			if m.srv != nil {
-				m.srv.Close()
-			}
+			m.stopServe()
 			return m, tea.Quit
 		}
 		switch m.screen {
@@ -355,7 +368,15 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.screen = screenViewport
 			return m, nil
 		case "building for preview":
-			m.startServe()
+			// Bind here, on the model that keeps the server: a port already
+			// in use is a preview failure, and announcing a URL no listener
+			// backs would be a lie.
+			if err := m.listen(); err != nil {
+				m.screen = screenList
+				m.errorMsg = err.Error()
+				return m, nil
+			}
+			m.announceServe()
 			return m, nil
 		}
 		m.screen = screenList
@@ -365,14 +386,45 @@ func (m MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *MenuModel) startServe() {
-	addr := fmt.Sprintf("127.0.0.1:%d", m.port)
-	m.srv = &http.Server{
-		Addr:              addr,
+// listen binds the preview listener and starts serving public/ in the
+// background. A bind failure goes back to the progress screen, which reports
+// it. A live listener is closed first, so a second "Preview (serve)" can take
+// the same port back instead of failing on its own predecessor.
+func (m *MenuModel) listen() error {
+	m.stopServe()
+	ln, err := net.Listen("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(m.port)))
+	if err != nil {
+		return fmt.Errorf("preview: %w", err)
+	}
+	srv := &http.Server{
 		Handler:           http.FileServer(http.Dir(filepath.Join(m.root, "public"))),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
-	go func() { _ = m.srv.ListenAndServe() }()
+	go func() { _ = srv.Serve(ln) }()
+	m.srv = srv
+	m.ln = ln
+	return nil
+}
+
+// stopServe closes the preview server and its listener, and is safe to call
+// when nothing is running.
+func (m *MenuModel) stopServe() {
+	if m.ln != nil {
+		// The listener is closed directly: closing the http.Server alone
+		// leaves the port held until its own close lands, which is too late
+		// for a rebind on the very next action.
+		_ = m.ln.Close()
+		m.ln = nil
+	}
+	if m.srv != nil {
+		_ = m.srv.Close()
+		m.srv = nil
+	}
+}
+
+// announceServe shows the URL of an already-listening server.
+func (m *MenuModel) announceServe() {
+	addr := fmt.Sprintf("127.0.0.1:%d", m.port)
 	m.vpTitle = "preview"
 	m.vp.setContent(fmt.Sprintf("✓ serving %s\nopen http://%s in your browser\n\nany key returns to the menu (server keeps running)", filepath.Join(m.root, "public"), addr))
 	m.screen = screenViewport
