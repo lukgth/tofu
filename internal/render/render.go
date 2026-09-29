@@ -119,6 +119,96 @@ func write(dest string, content []byte) error {
 	return os.WriteFile(dest, content, 0o644)
 }
 
+// resolvePath returns the absolute, symlink-free form of path. Every component
+// that exists is resolved, so the result cannot be redirected anywhere else
+// later; for a path that does not exist yet the nearest existing ancestor is
+// resolved and the remaining elements are appended verbatim.
+func resolvePath(path string) (string, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	cur := abs
+	var tail []string
+	for {
+		if resolved, err := filepath.EvalSymlinks(cur); err == nil {
+			for i := len(tail) - 1; i >= 0; i-- {
+				resolved = filepath.Join(resolved, tail[i])
+			}
+			return filepath.Clean(resolved), nil
+		}
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			return "", fmt.Errorf("no existing ancestor of %s", abs)
+		}
+		tail = append(tail, filepath.Base(cur))
+		cur = parent
+	}
+}
+
+// under reports whether path sits inside root (or is root itself). Both sides
+// must already be resolved, or a symlinked output dir escapes the check.
+func under(root, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return false
+	}
+	return rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)))
+}
+
+// siteSources are the paths a build reads. The output directory may sit
+// inside the site (public/ is the default), but it must stay clear of these.
+var siteSources = []string{"tofu.toml", "content", "static", "assets-blog"}
+
+// prepareOutDir validates the requested output directory and clears any
+// earlier build so renamed or deleted sources cannot leave stale pages behind.
+// It runs before a single byte is written, so a rejected target leaves the
+// previous output and every source file untouched.
+func prepareOutDir(siteRoot, outDir string) error {
+	absSite, err := resolvePath(siteRoot)
+	if err != nil {
+		return err
+	}
+	absOut, err := resolvePath(outDir)
+	if err != nil {
+		return err
+	}
+	if absOut == absSite || under(absOut, absSite) {
+		return fmt.Errorf("output directory %s must not be the site root or contain it (%s)",
+			outDir, absSite)
+	}
+	// The wipe deletes everything below absOut, so the two must be disjoint in
+	// both directions: absOut inside a source would delete that source.
+	for _, rel := range siteSources {
+		src := filepath.Join(absSite, rel)
+		// A source that is itself a symlink is judged by where it points, so
+		// an outDir cannot dodge the check via a link.
+		if resolved, err := resolvePath(src); err == nil {
+			src = resolved
+		}
+		if under(absOut, src) || under(src, absOut) {
+			return fmt.Errorf("output directory %s overlaps the site source %s: "+
+				"the build would delete its own input", outDir, src)
+		}
+	}
+	entries, err := os.ReadDir(absOut)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return os.MkdirAll(absOut, 0o755)
+		}
+		return err
+	}
+	for _, e := range entries {
+		if err := os.RemoveAll(filepath.Join(absOut, e.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// reservedIndexSlug is the slug of the generated articles/index.html archive.
+const reservedIndexSlug = "index"
+
 // Build renders the whole site into outDir.
 func Build(siteRoot, outDir string, includeDrafts bool) error {
 	s, err := site.Load(siteRoot, includeDrafts)
@@ -129,6 +219,18 @@ func Build(siteRoot, outDir string, includeDrafts bool) error {
 	dupes := duplicateSlugs(s.Posts)
 	if len(dupes) > 0 {
 		return fmt.Errorf("duplicate slug %q in %s and %s", dupes[0].slug, dupes[0].files[0], dupes[0].files[1])
+	}
+	// articles/index.html is the generated post archive; a post with that slug
+	// would overwrite it. Reject before anything is written, so the archive of
+	// a previous build stays intact.
+	for i := range s.Posts {
+		if s.Posts[i].Slug == reservedIndexSlug {
+			return fmt.Errorf("post %q uses reserved slug %q: it would overwrite the articles archive",
+				s.Posts[i].Frontmatter.Title, reservedIndexSlug)
+		}
+	}
+	if err := prepareOutDir(siteRoot, outDir); err != nil {
+		return err
 	}
 
 	base := baseCtx(s.Config)
@@ -381,6 +483,11 @@ func writeJS(outDir string) error {
 	return write(filepath.Join(outDir, "assets-blog", "theme-and-visited.js"), b)
 }
 
+// copyStatic mirrors the site's static/ directory into outDir. WalkDir does
+// not follow symlinks, but os.ReadFile would, so a link resolving outside the
+// static tree is rejected: it would copy an arbitrary readable file into the
+// output. Links staying inside the tree are copied as plain files, and a link
+// to a directory is skipped rather than recursed into.
 func copyStatic(siteRoot, outDir string) error {
 	root := filepath.Join(siteRoot, "static")
 	resolvedRoot, err := filepath.EvalSymlinks(root)
@@ -388,35 +495,56 @@ func copyStatic(siteRoot, outDir string) error {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return err
+		return fmt.Errorf("static: %w", err)
 	}
-	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+	fi, err := os.Stat(resolvedRoot)
+	if err != nil {
+		return fmt.Errorf("static: %w", err)
+	}
+	if !fi.IsDir() {
+		return fmt.Errorf("static: %s is not a directory", root)
+	}
+	// static/ itself may be a symlink to a directory; walk the resolved tree so
+	// its contents are copied instead of the link being read as a file.
+	walkRoot := root
+	if lfi, err := os.Lstat(root); err == nil && lfi.Mode()&os.ModeSymlink != 0 {
+		walkRoot = resolvedRoot
+	}
+	return filepath.WalkDir(walkRoot, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(walkRoot, p)
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
 			return nil
 		}
-		rel, err := filepath.Rel(root, p)
-		if err != nil {
-			return err
-		}
-		// WalkDir does not follow symlinks, but os.ReadFile would: a symlink
-		// resolving outside static/ would copy an arbitrary readable file
-		// into the output. Reject those; allow links within the tree.
 		if d.Type()&os.ModeSymlink != 0 {
 			target, err := filepath.EvalSymlinks(p)
 			if err != nil {
-				return err
+				return fmt.Errorf("static/%s: broken symlink: %w", rel, err)
 			}
-			if inside, err := filepath.Rel(resolvedRoot, target); err != nil ||
-				inside == ".." || strings.HasPrefix(inside, ".."+string(filepath.Separator)) {
+			if !under(resolvedRoot, target) {
 				return fmt.Errorf("static/%s: symlink escapes the static directory", rel)
+			}
+			tfi, err := os.Stat(target)
+			if err != nil {
+				return fmt.Errorf("static/%s: %w", rel, err)
+			}
+			if tfi.IsDir() {
+				// Copying a linked directory would recurse out of the walked
+				// tree; the real directory is copied on its own if in-tree.
+				return nil
+			}
+			if !tfi.Mode().IsRegular() {
+				return fmt.Errorf("static/%s: not a regular file", rel)
 			}
 		}
 		b, err := os.ReadFile(p)
 		if err != nil {
-			return err
+			return fmt.Errorf("static/%s: %w", rel, err)
 		}
 		return write(filepath.Join(outDir, rel), b)
 	})
@@ -443,11 +571,43 @@ func duplicateSlugs(posts []post.Post) []slugDup {
 	return dupes
 }
 
+// homeBody renders the configured homepage body file. The path is
+// site-relative: it must stay inside the site and name a readable regular
+// file, so a traversal or a stray symlink cannot pull unrelated bytes onto
+// the homepage. Missing or unreadable configured files are errors.
+func homeBody(siteRoot, bodyFile string) (string, error) {
+	absSite, err := resolvePath(siteRoot)
+	if err != nil {
+		return "", err
+	}
+	p := filepath.Join(siteRoot, bodyFile)
+	resolved, err := resolvePath(p)
+	if err != nil {
+		return "", fmt.Errorf("homepage body_file %q: %w", bodyFile, err)
+	}
+	if !under(absSite, resolved) {
+		return "", fmt.Errorf("homepage body_file %q resolves outside the site (%s)", bodyFile, resolved)
+	}
+	fi, err := os.Stat(resolved)
+	if err != nil {
+		return "", fmt.Errorf("homepage body_file %q: %w", bodyFile, err)
+	}
+	if !fi.Mode().IsRegular() {
+		return "", fmt.Errorf("homepage body_file %q is not a regular file", bodyFile)
+	}
+	b, err := os.ReadFile(resolved)
+	if err != nil {
+		return "", fmt.Errorf("homepage body_file %q: %w", bodyFile, err)
+	}
+	return MarkdownToHTML(string(b)), nil
+}
+
 func writeIndex(siteRoot string, s site.Site, base renderCtx, outDir string) error {
 	homeHTML := ""
 	if s.Config.Homepage.BodyFile != "" {
-		if b, err := os.ReadFile(filepath.Join(siteRoot, s.Config.Homepage.BodyFile)); err == nil {
-			homeHTML = MarkdownToHTML(string(b))
+		var err error
+		if homeHTML, err = homeBody(siteRoot, s.Config.Homepage.BodyFile); err != nil {
+			return err
 		}
 	}
 	showRecent := s.Config.RecentCount != 0

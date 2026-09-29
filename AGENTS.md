@@ -29,7 +29,7 @@
 - `recent_count` clamps to 1–20, default 5; `0` hides the homepage recents (negatives → 5, >20 → 20, missing → 5).
 - comments are minimal: only for non-obvious whys. no narration, no restating code.
 - TTY detection is stdlib only (`os.Stdout.Stat()` + `ModeCharDevice`), no isatty dep.
-- empty/missing `content/home.md` or `static/` never fails a build.
+- a configured non-empty `homepage.body_file` must exist and be readable; an empty value disables the body. Empty `static/` never fails a build.
 
 ## e2e
 

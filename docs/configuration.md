@@ -43,7 +43,7 @@ footer      = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
   body_file = "content/home.md" # markdown rendered as the homepage body
 ```
 
-- Empty/missing `home.md` never fails a build — the homepage just shows the recent-posts list. Set `recent_count = 0` to hide the recent-posts list entirely; the homepage then shows only the rendered `home.md` (or just the header/footer if it's empty).
+- If `body_file` is empty, the homepage body is disabled. When it names a file, that file must exist, be readable, and stay inside the site; otherwise the build fails with a contextual error. An existing empty file is valid. To hide recent posts, set `recent_count = 0`; the homepage then shows only the rendered `home.md` (or just the header/footer when the body file is empty/disabled).
 
 ## `[theme]`
 
