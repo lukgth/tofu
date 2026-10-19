@@ -1,169 +1,60 @@
 # tofu
 
-A tiny, cute static blog generator built with [Bubble Tea], [Bubbles],
-[Lip Gloss], and [Harmonica].
+tofu is a static blog generator written in Go. It reads Markdown posts with
+YAML frontmatter and writes a static site that can be served from any web
+host. A terminal interface handles site setup, post creation and editing,
+builds, and local previews.
 
-```text
-$ tofu
+You can use tofu to:
 
-  tofu
+- Write posts in Markdown, with GFM tables, task lists, footnotes, alerts,
+  emoji shortcodes, and syntax-highlighted code blocks.
+- Style the site with a light and dark theme, configurable colors, and an
+  optional `assets-blog/custom.css` override.
+- Publish tag pages and, when `base_url` is set, an RSS feed.
+- Work through menus and wizards, or use flag-driven commands in scripts.
 
-│ New site
+## Features
 
-  New blog post
+- Static output: `public/` contains HTML, CSS, JavaScript, and fonts, with no
+  server-side runtime.
+- Self-hosted Rubik, Ioskeley Mono, and Gelasio fonts. The built-in theme
+  makes no external requests.
+- A light and dark theme with a visitor toggle that persists in
+  `localStorage`.
+- Configuration in `tofu.toml`, with unknown keys rejected.
 
-  Edit existing posts
+## Getting started
 
-  Build site
-
-  Preview (serve)
-
-  List posts
-
-  Quit
-
-
-enter select • / filter • ctrl+c quit
-```
-
-## Tutorial
-
-Start a site, write a post, and build the site. `tofu init` also creates a
-first post, `hello-tofu.md`.
-
-```sh
-$ tofu init mysite
-created content/home.md
-created content/posts/hello-tofu.md
-created tofu.toml
-done! try `tofu new` to write a post
-
-$ tofu new --title "Hello World" --slug hello-world
-created content/posts/hello-world.md
-
-$ tofu build
-Built 4 posts -> public/
-```
-
-If you run `tofu` with no arguments, the home menu opens. Esc goes back.
-`ctrl+c` quits. `/` filters.
-
-## Installation
-
-tofu requires Go 1.25+.
+tofu requires Go 1.25 or later.
 
 ```sh
 git clone https://github.com/lukgth/tofu
 cd tofu
-CGO_ENABLED=0 go build -ldflags="-s -w" -o tofu ./cmd/tofu
+make build
+
+./tofu init mysite
+cd mysite
+../tofu new --title "Hello World" --slug hello-world
+../tofu build
+../tofu serve
 ```
 
-## Commands
+`init` creates `tofu.toml`, `content/home.md`, and a first post. `build`
+writes the site to `public/` and leaves drafts out unless you add `--drafts`.
+`serve` hosts the existing build at `http://127.0.0.1:8787`. Add `--build` to
+rebuild before serving.
 
-- `tofu` opens the home menu
-- `tofu init [dir]` creates a new site (`--force` for non-empty dirs)
-- `tofu new` writes a new blog post
-- `tofu edit [slug]` edits an existing post
-- `tofu build` renders the site to `public/` (`--out`, `--drafts`)
-- `tofu list` lists posts, newest first (`--drafts`)
-- `tofu serve` previews locally (`--port`, `--build`)
+The build clears the output directory before writing. Do not point `--out` at
+a directory that contains other files.
 
-### tofu new / tofu edit
+## Documentation
 
-```sh
-$ tofu new --title "Hello World" --slug hello-world
-created content/posts/hello-world.md
-
-$ tofu edit hello-world --title "Hello there"
-updated content/posts/hello-world.md
-```
-
-The `new` flags are optional. The wizard asks for each value that is
-missing. The body step grows with your text, and `ctrl+o` opens `$EDITOR`.
-The `edit` flags (`--title/--tags/--description/--date/--draft-set`) work
-headless. With a TTY, you get a date|slug|title picker (or `ctrl+b` to
-browse files) and a full edit form.
-
-### tofu build / tofu list
-
-```sh
-$ tofu build
-Built 4 posts -> public/
-
-$ tofu list
-2026-09-11 hello-tofu Hello, tofu
-2026-09-11 why-tofu Why tofu is cute
-2026-09-10 markdown-everywhere Markdown everywhere
-```
-
-Drafts get a ` (draft)` suffix. The build hides them unless you pass
-`--drafts`.
-
-### tofu serve
-
-```sh
-$ tofu serve --port 8787
-serving public at http://127.0.0.1:8787 (ctrl+c to stop)
-```
-
-## Configuration
-
-All configuration lives in `tofu.toml` at the site root:
-
-```toml
-title = "My Tofu Site"
-author = "Jane Doe"
-recent_count = 5
-footer = "powered by <a href='https://github.com/lukgth/tofu'>tofu</a>"
-
-[theme]
-width = "720px"
-link = "#9d6bb8"
-code_style = "github"
-dark_code_style = "github-dark"
-```
-
-The full sample is in [example/tofu.toml](example/tofu.toml). It contains
-every theme color, the nav, the homepage, and the code color schemes.
-Unknown keys cause errors.
-
-## Docs
-
-- [Configuration](docs/configuration.md): every `tofu.toml` key, theme colors, and code color schemes
-- [Content](docs/content.md): post format, frontmatter, tags, homepage, and editing
-- [Markdown](docs/markdown.md): syntax map, `==highlight==`, alerts, emoji, task lists, footnotes, raw HTML, code blocks, and images
-- [Theming](docs/theming.md): layers, fonts, header anatomy, and custom.css recipes
-- [TUI Reference](docs/tui.md): menu, wizards, keybindings, mouse, and file browser
-- [Deploying](docs/deploying.md): output tree, static hosts, and rsync/CI
-
-## Features
-
-- Interactive TUI (menu, wizards, mouse support). All styling uses Bubble Tea + Lip Gloss.
-- Wizards for site creation, new posts, and editing. On the body step, `ctrl+o` opens `$EDITOR`.
-- Self-hosted fonts (Rubik + Ioskeley Mono) with zero external requests.
-- Light/dark theme with a visitor toggle. The choice persists in `localStorage`, and the page does not flash on load.
-- Per-tag list pages, RSS feed, and drafts.
-- `==highlight==`, GitHub alerts, emoji shortcodes, task lists, footnotes, and raw HTML passthrough all render.
-- Syntax-highlighted code blocks with 60+ selectable color schemes.
-- You can configure everything from `tofu.toml`. Drop an optional `assets-blog/custom.css` to override the theme.
-
-## Deploy
-
-`public/` is a plain static folder. Copy it to your host.
+Check out the documentation in [`docs/`](docs/) for configuration, Markdown
+syntax, theming, the TUI reference, and deployment. Run `tofu help` or
+`tofu <command> --help` for the command list and flags.
 
 ## Contributing
 
-Issues and PRs are welcome. The project uses the MIT license, see [LICENSE](LICENSE).
-
-## go install
-
-```sh
-go install github.com/lukgth/tofu/cmd/tofu@latest
-```
-
-(The module must be live on GitHub. Until then, use the build steps above.)
-
-[Bubble Tea]: https://github.com/charmbracelet/bubbletea
-[Bubbles]: https://github.com/charmbracelet/bubbles
-[Lip Gloss]: https://github.com/charmbracelet/lipgloss
-[Harmonica]: https://github.com/charmbracelet/harmonica
+Issues and pull requests are welcome. Run `make test` before sending a patch.
+tofu is released under the MIT license, see [LICENSE](LICENSE).
