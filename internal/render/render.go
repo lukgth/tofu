@@ -23,12 +23,13 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark-highlighting/v2"
 	extension "github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
 	rendererhtml "github.com/yuin/goldmark/renderer/html"
 )
 
 var md = goldmark.New(
 	goldmark.WithExtensions(
-		extension.GFM, extension.Footnote, extension.Typographer, Highlight,
+		extension.GFM, extension.Footnote, extension.Typographer, Highlight, Alerts, Emoji,
 		highlighting.NewHighlighting(
 			highlighting.WithStyle("github"),
 			highlighting.WithFormatOptions(
@@ -36,6 +37,7 @@ var md = goldmark.New(
 			),
 		),
 	),
+	goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 	goldmark.WithRendererOptions(rendererhtml.WithHardWraps(), rendererhtml.WithUnsafe()),
 )
 
@@ -740,16 +742,17 @@ var htmlTagRe = regexp.MustCompile(`<[^>]*>`)
 // merely repeats the frontmatter title — the post template already prints it.
 func stripDuplicateTitle(bodyHTML, title string) string {
 	trimmed := strings.TrimLeft(bodyHTML, " \t\n")
-	if !strings.HasPrefix(trimmed, "<h1>") {
+	if !strings.HasPrefix(trimmed, "<h1>") && !strings.HasPrefix(trimmed, "<h1 ") {
 		return bodyHTML
 	}
+	openEnd := strings.IndexByte(trimmed, '>')
 	end := strings.Index(trimmed, "</h1>")
-	if end < 0 {
+	if openEnd < 0 || end < 0 {
 		return bodyHTML
 	}
 	// Compare the heading's visible text so inline markup (# *Hello*) still
 	// matches the plain-text title.
-	heading := strings.TrimSpace(html.UnescapeString(htmlTagRe.ReplaceAllString(trimmed[4:end], "")))
+	heading := strings.TrimSpace(html.UnescapeString(htmlTagRe.ReplaceAllString(trimmed[openEnd+1:end], "")))
 	if strings.EqualFold(heading, strings.TrimSpace(title)) {
 		return trimmed[end+5:]
 	}

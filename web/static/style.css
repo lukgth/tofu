@@ -309,6 +309,47 @@ blockquote p {
   margin: 0;
 }
 
+.alert {
+  --alert-accent: var(--accent);
+  margin: 1rem 0;
+  padding: 0.5rem 1.25rem;
+  border-left: 0.25rem solid var(--alert-accent);
+  background: color-mix(in srgb, var(--alert-accent) 12%, transparent);
+  border-radius: 12px 4px 12px 4px;
+  color: var(--blockquote-color);
+}
+.alert > :first-child {
+  margin-top: 0;
+}
+.alert > :last-child {
+  margin-bottom: 0;
+}
+.alert-title {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+  color: var(--alert-accent);
+}
+.alert-note {
+  --alert-accent: light-dark(#0969da, #4493f8);
+}
+.alert-tip {
+  --alert-accent: light-dark(#1a7f37, #3fb950);
+}
+.alert-important {
+  --alert-accent: light-dark(#8250df, #ab7df8);
+}
+.alert-warning {
+  --alert-accent: light-dark(#9a6700, #d29922);
+}
+.alert-caution {
+  --alert-accent: light-dark(#cf222e, #f85149);
+}
+
+li input[type="checkbox"] {
+  margin: 0 0.5rem 0 -1.25rem;
+  vertical-align: middle;
+}
+
 .tags {
   margin: 0.5rem 0 1.5rem;
 }

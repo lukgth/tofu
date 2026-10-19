@@ -1,6 +1,6 @@
 # Content Guide
 
-Where content lives and how it's written.
+Where content lives and how to write it.
 
 ## Layout
 
@@ -37,19 +37,21 @@ slug: my-cute-post        # optional, defaults to slugified title
 your body here.
 ```
 
-- **title**: shown in lists, the post page, and the browser tab.
-- **date**: `YYYY-MM-DD` (or RFC3339). Posts are listed newest first.
-- **tags**: optional list. Each tag gets a list page at `articles/tag/<tag>.html`; the post footer links to it (`tags: tech`).
-- **draft**: `true` hides the post from the build unless `tofu build --drafts`. Drafts get a `(draft)` suffix in lists.
-- **slug**: optional override; defaults to a slugified title. Duplicate slugs fail the build with both file names.
+- title: shown in lists, the post page, and the browser tab.
+- date: `YYYY-MM-DD` (or RFC3339). Posts are listed newest first.
+- tags: an optional list. Each tag gets a list page at `articles/tag/<tag>.html`. The post footer links to it (`tags: tech`).
+- draft: `true` hides the post from the build unless you run `tofu build --drafts`. Drafts get a `(draft)` suffix in lists.
+- slug: an optional override. The default is a slugified title. Duplicate slugs fail the build and report both file names.
 
 ## Writing
 
 - GFM everywhere: tables, task lists, strikethrough, autolinks.
 - `==highlight==` → purple `<mark>` chip.
 - Raw HTML passes through: `<mark>`, `<details>`, `<center>`, custom spans, etc.
+- GitHub alerts: `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`.
+- Emoji shortcodes: `:smile:`, `:+1:`. Unknown shortcodes stay as written.
 - Footnotes: `[^1]` with a `[^1]: text` definition → rendered in a "References / Side Notes" block.
-- Images: `![alt](https://…)` remote, `![alt](/file.png)` for files in your site's `static/`. Images get rounded corners and center automatically.
+- Images: `![alt](https://…)` remote, `![alt](/file.png)` for files in your site's `static/`. Images get rounded corners and are centered automatically.
 - Fenced code blocks with a language get syntax highlighting:
 
   ````markdown
@@ -63,20 +65,35 @@ your body here.
 
 ## Titles
 
-The post page shows exactly one title, from frontmatter. If your body starts with an `# H1` that repeats the title, tofu drops the duplicate automatically. The homepage works the same way: `content/home.md` owns the headline — the template never injects a second one.
+The post page shows exactly one title, and that title comes from
+frontmatter. If your body starts with an `# H1` that repeats the title,
+tofu drops the duplicate automatically. The homepage works the same
+way. `content/home.md` owns the headline, and the template never
+injects a second one.
 
 ## Homepage
 
-`content/home.md` is regular markdown. Everything you write renders at the top of the homepage, followed by the recent-posts list (count from `recent_count`). Set `recent_count = 0` to hide the recent-posts list entirely; the homepage then shows only `content/home.md`.
+`content/home.md` is regular markdown. Everything you write renders at
+the top of the homepage. The recent-posts list follows it, and
+`recent_count` sets the count. Set `recent_count = 0` to hide the
+recent-posts list. The homepage then shows only `content/home.md`.
 
 ## Editing
 
 - `tofu edit` (or the home menu) opens a date|slug|title picker of all posts.
-- `ctrl+b` on the picker opens a file browser over `content/` — name, date, size, directories first, `backspace` up, `esc` back.
-- The edit wizard prefills title/date/tags/description from frontmatter and the body into a textarea.
-- On the body step, `ctrl+o` opens the current draft in `$EDITOR` (flags like `code --wait` work). Closing the editor puts the text back in the wizard.
-- The body choice step can instead open the *whole file* (frontmatter + body) in `$EDITOR` after review.
+- `ctrl+b` on the picker opens a file browser over `content/`. It shows
+  name, date, and size, with directories first. `backspace` goes up.
+  `esc` goes back.
+- The edit wizard prefills the title, date, tags, and description from
+  frontmatter, and puts the body into a textarea.
+- On the body step, `ctrl+o` opens the current draft in `$EDITOR`
+  (flags like `code --wait` work). When the editor closes, the text goes
+  back into the wizard.
+- The body choice step can instead open the whole file (frontmatter +
+  body) in `$EDITOR` after review.
 
 ## Mouse support
 
-The TUI is mouse-enabled: click a menu entry to move to it, click again to activate; click a row in the edit picker; click a choice card in wizards.
+The TUI supports the mouse. Click a menu entry to move to it, and click
+again to activate it. Click a row in the edit picker. Click a choice
+card in wizards.

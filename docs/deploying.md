@@ -1,6 +1,6 @@
 # Deploying
 
-`public/` is a plain static folder — upload it anywhere that serves files.
+`public/` is a plain static folder. Upload it to any host that serves files.
 
 ## Output tree
 
@@ -37,14 +37,18 @@ CGO_ENABLED=0 go build -ldflags="-s -w" -o tofu ./cmd/tofu && ./tofu build && rs
 
 ## Static hosts
 
-- **Netlify / Cloudflare Pages / Vercel**: set the build command to `go build -o tofu ./cmd/tofu && ./tofu build` and the publish directory to `public`.
-- **GitHub Pages**: push `public/` to your `gh-pages` branch or deploy from a workflow.
-- **Any VPS**: `tofu serve` is only for previewing; for production prefer nginx/caddy pointing at the folder.
+- Netlify / Cloudflare Pages / Vercel: set the build command to
+  `go build -o tofu ./cmd/tofu && ./tofu build`. Set the publish
+  directory to `public`.
+- GitHub Pages: push `public/` to your `gh-pages` branch or deploy from a workflow.
+- Any VPS: `tofu serve` is only for previewing. For production, prefer nginx or caddy pointing at the folder.
 
 ## Notes
 
-- `base_url` in `tofu.toml` is used for absolute links in `feed.xml` only — pages use root-relative links, so the site works on any domain or subdirectory preview.
-- Fonts are self-hosted from `assets-blog/fonts/`: no third-party requests, works offline.
+- `base_url` in `tofu.toml` is used only for absolute links in
+  `feed.xml`. Pages use root-relative links, so the site works on any
+  domain or in a subdirectory preview.
+- Fonts are self-hosted from `assets-blog/fonts/`. The site makes no third-party requests and works offline.
 - Drafts are excluded from the output and the feed unless you build with `--drafts`.
 
 ## Local preview

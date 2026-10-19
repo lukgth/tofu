@@ -26,28 +26,42 @@ enter select • / filter • ctrl+c quit
 | `enter` | activate the selected item |
 | `ctrl+c` | quit |
 
-Items needing a site show `(need site — run New site first)` when no `tofu.toml` exists, and activating one shows a `run New site first` hint.
+Items that need a site show `(need site — run New site first)` when no
+`tofu.toml` exists. If you activate one, it shows a `run New site first`
+hint.
 
-**Mouse**: left-click an item to move the cursor to it; click the already-selected item to activate it.
+Mouse: left-click an item to move the cursor to it. Click the already-selected item to activate it.
 
-The menu re-opens after every action so labels reflect the current site.
+The menu reopens after every action, so labels reflect the current site.
 
 ## Wizards (new site, new post, edit)
 
-Wizards are step-by-step prompts: each step shows a label, one control, and a footer.
+Wizards are step-by-step prompts. Each step shows a label, one control, and a footer.
 
 | key | action |
 |---|---|
 | `enter` | accept and go to the next step |
 | `esc` | previous step (on the first step: quit) |
 | `ctrl+c` | quit immediately |
-| `ctrl+o` | **body step only**: open the draft in `$EDITOR`; if it is unset or unusable, use the editor chosen by `select-editor` (`~/.selected_editor`), suspending into `select-editor` once if needed |
+| `ctrl+o` | body step only: open the draft in `$EDITOR`. The fallback is the `select-editor` choice and runs `select-editor` once if needed |
 
-- **Input steps**: text inputs with defaults/placeholder. `enter` on an empty title shows `a title is required`.
-- **Choice steps**: every option is a visible rounded card. Selected card: accent border + `●`; others: dim border + `○`. `↑/↓` moves, `enter` picks. **Mouse**: click a card to pick it.
-- **Body step**: grows with your content (starts 14 rows, max 30), no line numbers, placeholder `empty = starter template` on new posts. `ctrl+o` opens the current draft in `$EDITOR` (multi-word editors like `code --wait` work); if `$EDITOR` is unset or unusable, it falls back to the `select-editor` choice, asking once with `select-editor` when needed. On editor exit the text lands back in the textarea and the step stays put. Nonzero editor exit shows an inline `editor failed: …` message and keeps the draft.
-- **Review screen**: summary + Yes/No cards. `enter` on Yes runs the action; `esc`/No returns to step 1. `e` = change editor (runs `select-editor`; the pick applies to this session).
-- **Done screen**: `✓ Done! …` plus `press enter to go back to the menu`.
+- Input steps: text inputs with defaults and placeholders. `enter` on an empty title shows `a title is required`.
+- Choice steps: every option is a visible rounded card. The selected
+  card has an accent border and `●`. The other cards have a dim border
+  and `○`. `↑/↓` moves. `enter` picks. Mouse: click a card to pick it.
+- Body step: grows with your content (starts at 14 rows, maximum 30).
+  It has no line numbers. On new posts it shows the placeholder
+  `empty = starter template`. `ctrl+o` opens the current draft in
+  `$EDITOR` (multi-word editors like `code --wait` work). If `$EDITOR`
+  is unset or unusable, it falls back to the editor chosen by
+  `select-editor` (`~/.selected_editor`) and suspends into
+  `select-editor` once if needed. When the editor exits, the text returns
+  to the textarea and the step stays in place. A nonzero editor exit
+  shows an inline `editor failed: …` message and keeps the draft.
+- Review screen: a summary and Yes/No cards. `enter` on Yes runs the
+  action. `esc` or No returns to step 1. `e` changes the editor (runs
+  `select-editor`, and the pick applies to this session).
+- Done screen: `✓ Done! …` plus `press enter to go back to the menu`.
 
 ## Editing existing posts
 
@@ -57,14 +71,14 @@ Wizards are step-by-step prompts: each step shows a label, one control, and a fo
 |---|---|
 | `↑`/`↓` | move between posts |
 | `enter` | open the edit form for the selected post |
-| `ctrl+b` | open the **file browser** instead |
+| `ctrl+b` | open the file browser instead |
 | `esc`/`q` | back out |
 
-The picker is a date|slug|title table (drafts marked `(draft)`). **Mouse**: click a row to select it.
+The picker is a date|slug|title table (drafts marked `(draft)`). Mouse: click a row to select it.
 
 ### File browser (`ctrl+b`)
 
-Browses `content/` with tofu's own name|date|size browser (directories first, no permission clutter):
+The browser uses tofu's own name|date|size view over `content/` (directories first, no permission clutter):
 
 | key | action |
 |---|---|
@@ -73,26 +87,42 @@ Browses `content/` with tofu's own name|date|size browser (directories first, no
 | `backspace`, `h` | parent directory (stops at the site root) |
 | `esc`/`ctrl+c` | back to the table picker |
 
-**Mouse**: click a row to select it.
+Mouse: click a row to select it.
 
-Files without frontmatter open a body-only form: the whole file is the text and
-is written back verbatim. A file that opens with `---` but has broken frontmatter
-is an error, not a plain file, so its metadata is never folded into its body.
+Files without frontmatter open a body-only form. The whole file is the
+text and is written back verbatim. A file that opens with `---` but has
+broken frontmatter is an error, not a plain file. Its metadata is never
+folded into its body.
 
-`tofu edit <slug>` resolves the slug to exactly one post; a slug two files claim
-reports the files instead of picking one, and a path is rejected as a slug.
+`tofu edit <slug>` resolves the slug to exactly one post. If two files
+claim a slug, the command reports the files instead of picking one. The
+command rejects a path as a slug.
 
 ### Edit form
 
-Prefilled from frontmatter: title, date, tags (comma-separated), description, then a body-mode choice (`Quick edit (textarea)` / `Open $EDITOR`) and the body step.
+The form is prefilled from frontmatter: title, date, tags
+(comma-separated), and description. Then comes a body-mode choice
+(`Quick edit (textarea)` / `Open $EDITOR`) and the body step.
 
-- `Open $EDITOR` skips the textarea and, after review, opens the whole file (frontmatter + body) in `$EDITOR`; if `$EDITOR` is unset or unusable, it uses the `select-editor` choice (running `select-editor` once, then opening the file in the chosen editor). The review screen shows which editor will open and where it came from (`from $EDITOR` / `from select-editor`), with `e` to change editor by re-running `select-editor` (the pick overrides `$EDITOR` for this session). The review screen shows which editor will open (`editor: … (opens after confirm)`); frontmatter changes from the form are merged after the editor exits.
+- `Open $EDITOR` skips the textarea and opens the whole file (frontmatter
+  + body) in `$EDITOR` after review. If `$EDITOR` is unset or unusable,
+  it uses the `select-editor` choice: it runs `select-editor` once, then
+  opens the file in the chosen editor. The review screen shows which
+  editor will open and where it came from (`from $EDITOR` /
+  `from select-editor`). Press `e` to change the editor by re-running
+  `select-editor`, and the pick overrides `$EDITOR` for this session.
+  The review screen also shows `editor: … (opens after confirm)`.
+  Changes to frontmatter from the form are merged after the editor
+  exits.
 - `Quick edit` writes frontmatter + body directly at the end.
 
 ## Progress / preview screens
 
-- Building shows a spinner + progress bar; errors return you to the wizard step that failed.
-- Preview starts a local static server (`public/`) and shows the URL; any key returns to the menu (the server keeps running until you quit tofu).
+- Building shows a spinner and a progress bar. Errors return you to the
+  wizard step that failed.
+- Preview starts a local static server (`public/`) and shows the URL.
+  Any key returns to the menu. The server keeps running until you quit
+  tofu.
 
-If the preview port is taken, the build screen reports it and returns to the
-menu instead of showing a URL nothing is serving.
+If another process uses the preview port, the build screen reports it
+and returns to the menu. It does not show a URL that nothing serves.

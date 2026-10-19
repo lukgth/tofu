@@ -4,10 +4,10 @@ How the generated site looks and how to change it.
 
 ## Layered model
 
-1. **Theme defaults** (built in): Rubik body text, Ioskeley Mono code, purple/pink light theme, plum dark theme.
-2. **`tofu.toml` `[theme]`**: every color and font is a knob. See [configuration.md](configuration.md) for the full table.
-3. **`assets-blog/custom.css`** (optional — create the file to enable): loaded after `style.css`, wins over everything. Your escape hatch for anything the knobs don't cover.
-4. **`static/`**: raw files copied to the output root (buttons, images, fonts, favicon).
+1. Theme defaults (built in): Rubik body text, Ioskeley Mono code, purple/pink light theme, plum dark theme.
+2. `tofu.toml` `[theme]`: every color and font is a knob. See [configuration.md](configuration.md) for the full table.
+3. `assets-blog/custom.css` (optional, create the file to enable): loaded after `style.css`, it wins over everything. Use it for anything that the knobs do not cover.
+4. `static/`: raw files copied to the output root (buttons, images, fonts, favicon).
 
 ## Theme variables
 
@@ -26,13 +26,21 @@ Colors are rendered into `assets-blog/style.css` as CSS custom properties:
 }
 ```
 
-All light/dark values are emitted as CSS `light-dark(light, dark)`. A single `<meta name="color-scheme">` in `<head>` selects the scheme: it defaults to `light dark` (following the OS), while the header toggle rewrites its `content` to `light` or `dark` and persists that choice in `localStorage`. No classes or `prefers-color-scheme` media blocks are used.
+All light and dark values are emitted as the CSS function
+`light-dark(light, dark)`. A single `<meta name="color-scheme">` in
+`<head>` selects the scheme. It defaults to `light dark` and follows
+the OS. The header toggle rewrites its `content` to `light` or `dark`
+and saves that choice in `localStorage`. The site uses no classes and
+no `prefers-color-scheme` media blocks.
 
 ## Highlight & date pill
 
-- **Light mode**: the highlight derives from your `accent` — `color-mix(in srgb, var(--accent) 65%, white)` — a brighter pastel of whatever accent you pick.
-- **Dark mode**: `dark_highlight` is used directly (default lilac `#c9a0e8`).
-- Text on pills/highlights uses `light-dark()` to select a dark foreground in light mode and the theme text color in dark mode.
+- Light mode: the highlight derives from your `accent` with
+  `color-mix(in srgb, var(--accent) 65%, white)`. This is a brighter
+  pastel of the accent that you pick.
+- Dark mode: `dark_highlight` is used directly (default lilac `#c9a0e8`).
+- Text on pills and highlights uses `light-dark()` to select a dark
+  foreground in light mode and the theme text color in dark mode.
 
 ## Fonts
 
@@ -40,10 +48,13 @@ All light/dark values are emitted as CSS `light-dark(light, dark)`. A single `<m
 |---|---|---|
 | headings + body | `font_secondary` | Rubik (self-hosted: regular, italic, bold) |
 | top header site title | `font_header` | Georgia via Gelasio (self-hosted: regular, italic, bold) |
-| top header emphasis | `font_header_style`, `font_header_weight` | `normal` / `bold` — raw CSS values (e.g. `italic`, `800`) |
+| top header emphasis | `font_header_style`, `font_header_weight` | `normal` / `bold`, raw CSS values (e.g. `italic`, `800`) |
 | code, `pre`, tags | `font_main` | Ioskeley Mono (self-hosted: regular, bold, italic) |
 
-Self-hosted fonts are embedded in the binary and copied to `assets-blog/fonts/` at build time — zero external requests, works offline. To use your own fonts: point the knobs at any system/fallback stack and declare your own `@font-face` in `custom.css`.
+Self-hosted fonts are embedded in the binary and copied to
+`assets-blog/fonts/` at build time. The site makes no external requests
+and works offline. To use your own fonts, point the knobs at any system
+or fallback stack and declare your own `@font-face` in `custom.css`.
 
 ## Code color schemes
 
@@ -55,7 +66,8 @@ Fenced code blocks are highlighted with [Chroma](https://github.com/alecthomas/c
   dark_code_style = "catppuccin-mocha"   # dark mode
 ```
 
-Any Chroma style name is valid; unknown/empty falls back to `github` / `github-dark`. Some pairings that suit a purple site:
+Any Chroma style name is valid. An unknown or empty name falls back to
+`github` / `github-dark`. Some pairings that suit a purple site:
 
 | vibe | light | dark |
 |---|---|---|
@@ -64,7 +76,9 @@ Any Chroma style name is valid; unknown/empty falls back to `github` / `github-d
 | classic | `github`, `solarized-light`, `friendly` | `github-dark`, `onedark`, `dracula`, `nord`, `gruvbox`, `monokai` |
 | warm/retro | `gruvbox-light`, `autumn`, `manni` | `gruvbox`, `doom-one`, `hrdark`, `witchhazel` |
 
-Unknown or empty names fall back to `github` / `github-dark`. Code block *backgrounds* always follow `code_bg` / `dark_code_bg`, so chips and blocks share one surface color regardless of scheme.
+Unknown or empty names fall back to `github` / `github-dark`. Code
+block backgrounds always follow `code_bg` / `dark_code_bg`, so chips
+and blocks share one surface color regardless of the scheme.
 
 ## Header anatomy
 
@@ -76,17 +90,26 @@ home  blog            [theme toggle]
 
 - The header shows the site title once, as a single `h1.title` that links home (falls back from `header.title` to the top-level `title`).
 - The squiggle divider and the theme toggle button both use `--accent`.
-- Nav links are omitted when `[header.nav]` is empty; the toggle stays right-aligned either way.
+- If `[header.nav]` is empty, the build omits the nav links. The toggle stays right-aligned either way.
 
 ## Scripts
 
-Behaviour lives in `assets-blog/theme-and-visited.js` (one file, loaded with `defer`): the theme toggle and the visited-post italic styling. The only inline script is the ~5-line boot in `<head>` that applies a saved theme before first paint — it must run before render or the page would flash the wrong theme, so it can't be deferred to a file.
+Behavior lives in `assets-blog/theme-and-visited.js` (one file, loaded
+with `defer`). That file contains the theme toggle and the
+visited-post italic styling. The only inline script is the ~5-line boot
+in `<head>` that applies a saved theme before first paint. It must run
+before render. If it does not, the page flashes the wrong theme.
+Therefore it cannot be deferred to a file.
 
-`theme-and-visited.js` is regenerated on every build; persistent changes belong in `assets-blog/custom.css` (styling) rather than editing the emitted file.
+`theme-and-visited.js` is regenerated on every build. Put persistent
+changes in `assets-blog/custom.css` (styling). Do not edit the emitted
+file.
 
 ## Common customizations (custom.css recipes)
 
-`tofu init` doesn't create `custom.css` — make `assets-blog/custom.css` yourself and drop rules in; it's linked automatically once the file exists. For example, make images square-cornered:
+`tofu init` does not create `custom.css`. Make `assets-blog/custom.css`
+yourself and add rules. The build links it automatically when the file
+exists. For example, make images square-cornered:
 
 ```css
 img { border-radius: 0; }
@@ -113,4 +136,6 @@ footer img { image-rendering: pixelated; display: inline-block; margin: 0 2px; }
 
 ## Fonts fallback note
 
-If you replace `font_secondary`/`font_main` with fonts that aren't embedded, visitors without the font installed get your fallback stack. Keep at least one system fallback in the stack.
+If you replace `font_secondary`/`font_main` with fonts that are not
+embedded, visitors without the font installed get your fallback stack.
+Keep at least one system fallback in the stack.

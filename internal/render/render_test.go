@@ -467,6 +467,67 @@ func TestMarkdownHardWraps(t *testing.T) {
 	}
 }
 
+func TestMarkdownAlerts(t *testing.T) {
+	got := MarkdownToHTML("> [!NOTE]\n> Useful information.\n\n> [!CAUTION]\n> Risky action.\n\n> plain quote\n")
+	for _, want := range []string{
+		`<div class="alert alert-note">`,
+		`<p class="alert-title">Note</p>`,
+		`<p>Useful information.</p>`,
+		`<div class="alert alert-caution">`,
+		`<p class="alert-title">Caution</p>`,
+		`<blockquote>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+	if strings.Contains(got, "[!NOTE]") || strings.Contains(got, "[!CAUTION]") {
+		t.Errorf("alert marker leaked into output: %q", got)
+	}
+}
+
+func TestMarkdownAlertTrailingText(t *testing.T) {
+	got := MarkdownToHTML("> [!TIP] Extra words\n> More words.\n")
+	for _, want := range []string{`<div class="alert alert-tip">`, "Extra words", "More words."} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+	if strings.Contains(got, "[!TIP]") {
+		t.Errorf("alert marker leaked into output: %q", got)
+	}
+}
+
+func TestMarkdownEmoji(t *testing.T) {
+	got := MarkdownToHTML(":+1: and :smile: and :not_an_emoji: and `:tada:`\n")
+	for _, want := range []string{"👍", "😄", ":not_an_emoji:", "<code>:tada:</code>"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+}
+
+func TestMarkdownFootnotesAndTaskLists(t *testing.T) {
+	got := MarkdownToHTML("Here is a footnote[^1].\n\n- [x] done\n- [ ] todo\n\n[^1]: My reference.\n")
+	for _, want := range []string{
+		`class="footnote-ref"`,
+		`class="footnotes"`,
+		`<input checked="" disabled="" type="checkbox">`,
+		`<input disabled="" type="checkbox">`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+}
+
+func TestMarkdownHeadingIDs(t *testing.T) {
+	got := MarkdownToHTML("# Hello World\n")
+	if !strings.Contains(got, `<h1 id="hello-world">Hello World</h1>`) {
+		t.Errorf("missing heading ID in %q", got)
+	}
+}
+
 // Tags are untrusted frontmatter: a traversal-looking tag must not escape the
 // tag output directory, and the post's tag link must match the emitted file.
 func TestTagNamesAreSanitized(t *testing.T) {

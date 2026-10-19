@@ -1,6 +1,6 @@
 # tofu
 
-a tiny cute static blog generator built with [Bubble Tea], [Bubbles],
+A tiny, cute static blog generator built with [Bubble Tea], [Bubbles],
 [Lip Gloss], and [Harmonica].
 
 ```text
@@ -28,8 +28,8 @@ enter select • / filter • ctrl+c quit
 
 ## Tutorial
 
-Start a site, write a post, build it. `tofu init` also drops a first
-post, `hello-tofu.md`.
+Start a site, write a post, and build the site. `tofu init` also creates a
+first post, `hello-tofu.md`.
 
 ```sh
 $ tofu init mysite
@@ -45,12 +45,12 @@ $ tofu build
 Built 4 posts -> public/
 ```
 
-`tofu` with no arguments opens the home menu. Esc goes back, `ctrl+c`
-quits, `/` filters.
+If you run `tofu` with no arguments, the home menu opens. Esc goes back.
+`ctrl+c` quits. `/` filters.
 
 ## Installation
 
-Requires Go 1.25+.
+tofu requires Go 1.25+.
 
 ```sh
 git clone https://github.com/lukgth/tofu
@@ -61,7 +61,7 @@ CGO_ENABLED=0 go build -ldflags="-s -w" -o tofu ./cmd/tofu
 ## Commands
 
 - `tofu` opens the home menu
-- `tofu init [dir]` scaffolds a new site (`--force` for non-empty dirs)
+- `tofu init [dir]` creates a new site (`--force` for non-empty dirs)
 - `tofu new` writes a new blog post
 - `tofu edit [slug]` edits an existing post
 - `tofu build` renders the site to `public/` (`--out`, `--drafts`)
@@ -78,10 +78,10 @@ $ tofu edit hello-world --title "Hello there"
 updated content/posts/hello-world.md
 ```
 
-`new` flags are optional, the wizard asks for whatever's missing. The body
-step grows with your text and accepts `ctrl+o` to jump into `$EDITOR`.
-`edit` flags (`--title/--tags/--description/--date/--draft-set`) work
-headless; with a TTY you get a date|slug|title picker (or `ctrl+b` to
+The `new` flags are optional. The wizard asks for each value that is
+missing. The body step grows with your text, and `ctrl+o` opens `$EDITOR`.
+The `edit` flags (`--title/--tags/--description/--date/--draft-set`) work
+headless. With a TTY, you get a date|slug|title picker (or `ctrl+b` to
 browse files) and a full edit form.
 
 ### tofu build / tofu list
@@ -96,7 +96,8 @@ $ tofu list
 2026-09-10 markdown-everywhere Markdown everywhere
 ```
 
-Drafts get a ` (draft)` suffix and are hidden unless `--drafts`.
+Drafts get a ` (draft)` suffix. The build hides them unless you pass
+`--drafts`.
 
 ### tofu serve
 
@@ -105,9 +106,9 @@ $ tofu serve --port 8787
 serving public at http://127.0.0.1:8787 (ctrl+c to stop)
 ```
 
-## Config
+## Configuration
 
-Everything lives in `tofu.toml` at the site root:
+All configuration lives in `tofu.toml` at the site root:
 
 ```toml
 title = "My Tofu Site"
@@ -122,28 +123,29 @@ code_style = "github"
 dark_code_style = "github-dark"
 ```
 
-The full sample (every theme color, nav, homepage, code color schemes) is in
-[example/tofu.toml](example/tofu.toml). Unknown keys are errors.
+The full sample is in [example/tofu.toml](example/tofu.toml). It contains
+every theme color, the nav, the homepage, and the code color schemes.
+Unknown keys cause errors.
 
 ## Docs
 
-- [Configuration](docs/configuration.md) — every `tofu.toml` key, theme colors, code color schemes
-- [Content](docs/content.md) — post format, frontmatter, tags, homepage, editing
-- [Markdown](docs/markdown.md) — syntax map, `==highlight==`, raw HTML, code blocks, images
-- [Theming](docs/theming.md) — layers, fonts, header anatomy, custom.css recipes
-- [TUI Reference](docs/tui.md) — menu, wizards, keybindings, mouse, file browser
-- [Deploying](docs/deploying.md) — output tree, static hosts, rsync/CI
+- [Configuration](docs/configuration.md): every `tofu.toml` key, theme colors, and code color schemes
+- [Content](docs/content.md): post format, frontmatter, tags, homepage, and editing
+- [Markdown](docs/markdown.md): syntax map, `==highlight==`, alerts, emoji, task lists, footnotes, raw HTML, code blocks, and images
+- [Theming](docs/theming.md): layers, fonts, header anatomy, and custom.css recipes
+- [TUI Reference](docs/tui.md): menu, wizards, keybindings, mouse, and file browser
+- [Deploying](docs/deploying.md): output tree, static hosts, and rsync/CI
 
 ## Features
 
-- Interactive TUI (menu, wizards, mouse support) — all styling through Bubble Tea + Lip Gloss
-- Wizards for site creation, new posts, and editing; `ctrl+o` opens `$EDITOR` on the body step
-- Self-hosted fonts (Rubik + Ioskeley Mono) — zero external requests
-- Light/dark theme with a visitor toggle, `localStorage` persistence, no flash on load
-- Per-tag list pages, RSS feed, drafts
-- `==highlight==` markdown, raw HTML passthrough, footnotes
-- Syntax-highlighted code blocks with 60+ selectable color schemes
-- Everything configurable from `tofu.toml`; drop an optional `assets-blog/custom.css` to override the theme
+- Interactive TUI (menu, wizards, mouse support). All styling uses Bubble Tea + Lip Gloss.
+- Wizards for site creation, new posts, and editing. On the body step, `ctrl+o` opens `$EDITOR`.
+- Self-hosted fonts (Rubik + Ioskeley Mono) with zero external requests.
+- Light/dark theme with a visitor toggle. The choice persists in `localStorage`, and the page does not flash on load.
+- Per-tag list pages, RSS feed, and drafts.
+- `==highlight==`, GitHub alerts, emoji shortcodes, task lists, footnotes, and raw HTML passthrough all render.
+- Syntax-highlighted code blocks with 60+ selectable color schemes.
+- You can configure everything from `tofu.toml`. Drop an optional `assets-blog/custom.css` to override the theme.
 
 ## Deploy
 
@@ -151,7 +153,7 @@ The full sample (every theme color, nav, homepage, code color schemes) is in
 
 ## Contributing
 
-Issues and PRs welcome. MIT license, see [LICENSE](LICENSE).
+Issues and PRs are welcome. The project uses the MIT license, see [LICENSE](LICENSE).
 
 ## go install
 
@@ -159,7 +161,7 @@ Issues and PRs welcome. MIT license, see [LICENSE](LICENSE).
 go install github.com/lukgth/tofu/cmd/tofu@latest
 ```
 
-(Needs the module live on GitHub; until then use the build steps above.)
+(The module must be live on GitHub. Until then, use the build steps above.)
 
 [Bubble Tea]: https://github.com/charmbracelet/bubbletea
 [Bubbles]: https://github.com/charmbracelet/bubbles
